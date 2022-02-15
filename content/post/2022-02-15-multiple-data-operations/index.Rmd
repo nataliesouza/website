@@ -1,0 +1,124 @@
+---
+title: 'Multiple Data Operations '
+author: "R package build"
+date: '2022-02-15'
+slug: multiple-data-operations
+categories: []
+tags: []
+---
+
+# Women in Science Data
+```{r}
+library(tidyverse)
+```
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/professions.csv'
+professions <- read_csv(url)
+names(professions)
+```
+
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/dates.csv'
+dates <- read_csv(url)
+names(dates)
+```
+
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/works.csv'
+works <- read_csv(url)
+names(works)
+```
+## Join Command
+### Left Join
+```{r}
+professions %>%
+  left_join(dates)
+```
+### Right Join 
+```{r}
+professions %>%
+  right_join(dates)
+```
+### Ful Join
+```{r}
+dates %>%
+  full_join(works)
+```
+### Inner Join
+```{r}
+dates %>%
+  inner_join(works)
+```
+### Semi Join
+```{r}
+dates %>%
+  semi_join(works)
+```
+### Anti Join
+```{r}
+dates %>%
+  anti_join(works)
+```
+### Putting it all together 
+```{r}
+professions %>%
+  left_join(dates) %>%
+  left_join(works)
+```
+# Student Records Data
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/enrolment.csv'
+enrolment <- read_csv(url)
+names(enrolment)
+```
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/survey.csv'
+survey <- read_csv(url)
+names(survey)
+```
+## Multiple Data in Use 
+### In class
+```{r}
+enrolment %>% 
+  left_join(survey, by = "id")
+```
+### Survey Missing 
+```{r}
+enrolment %>% 
+  anti_join(survey, by = "id")
+```
+### Dropped
+```{r}
+survey %>% 
+  anti_join(enrolment, by = "id")
+```
+# Grocery Sales Data
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/purchases.csv'
+purchases <- read_csv(url)
+names(purchases)
+```
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/prices.csv'
+prices <- read_csv(url)
+names(prices)
+```
+## Multiple Data in Use
+### Total Revenue
+```{r}
+purchases %>% 
+  left_join(prices)
+```
+### Revenue per Costume 
+```{r}
+purchases %>% 
+  left_join(prices) %>%
+  group_by(customer_id) %>%
+  summarise(total_revenue = sum(price))
+```
+
+
+
+
+
+
