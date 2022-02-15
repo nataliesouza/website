@@ -1,0 +1,97 @@
+---
+title: "Tidying Data"
+author: "R package build"
+date: '2022-02-15'
+slug: tyding-data
+categories: []
+tags: []
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="call-library" class="section level1">
+<h1>Call library</h1>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.5     ✓ purrr   0.3.4
+## ✓ tibble  3.1.6     ✓ dplyr   1.0.8
+## ✓ tidyr   1.2.0     ✓ stringr 1.4.0
+## ✓ readr   2.1.2     ✓ forcats 0.5.1</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+</div>
+<div id="approval-of-trump-data" class="section level1">
+<h1>Approval of Trump Data</h1>
+<pre class="r"><code>url &lt;- &#39;https://raw.githubusercontent.com/dearbharat/tidyverse/main/trump.csv&#39;
+trump &lt;- read_csv(url)</code></pre>
+<pre><code>## Rows: 2702 Columns: 4
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr  (1): subgroup
+## dbl  (2): approval, disapproval
+## date (1): date
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>names(trump)</code></pre>
+<pre><code>## [1] &quot;subgroup&quot;    &quot;date&quot;        &quot;approval&quot;    &quot;disapproval&quot;</code></pre>
+<div id="pivot-command" class="section level2">
+<h2>Pivot Command</h2>
+<pre class="r"><code>trump_longer &lt;- trump %&gt;%
+  pivot_longer(
+    cols = c(approval, disapproval),
+    names_to = &quot;rating_type&quot;,
+    values_to = &quot;rating_value&quot;
+  )
+trump_longer</code></pre>
+<pre><code>## # A tibble: 5,404 × 4
+##    subgroup date       rating_type rating_value
+##    &lt;chr&gt;    &lt;date&gt;     &lt;chr&gt;              &lt;dbl&gt;
+##  1 Voters   2020-10-04 approval            44.7
+##  2 Voters   2020-10-04 disapproval         52.2
+##  3 Adults   2020-10-04 approval            43.2
+##  4 Adults   2020-10-04 disapproval         52.6
+##  5 Adults   2020-10-03 approval            43.2
+##  6 Adults   2020-10-03 disapproval         52.6
+##  7 Voters   2020-10-03 approval            45.0
+##  8 Voters   2020-10-03 disapproval         51.7
+##  9 Adults   2020-10-02 approval            43.3
+## 10 Adults   2020-10-02 disapproval         52.4
+## # … with 5,394 more rows</code></pre>
+</div>
+<div id="ggplot-command" class="section level2">
+<h2>ggplot Command</h2>
+<pre class="r"><code>ggplot(trump_longer, 
+       aes(x = date, y = rating_value, 
+           color = rating_type, group = rating_type)) +
+  geom_line() +
+  facet_wrap(~ subgroup) +
+  scale_color_manual(values = c(&quot;darkgreen&quot;, &quot;orange&quot;)) +
+  labs(
+    x = &quot;Date&quot;, y = &quot;Rating&quot;,
+    color = NULL,
+    title = &quot;How (un)popular is Donald Trump?&quot;,
+    subtitle = &quot;Estimates based on polls of all adults and polls of likely/registered voters&quot;,
+    caption = &quot;Source: FiveThirtyEight modeling estimates&quot;
+  )</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<pre class="r"><code>ggplot(trump_longer, 
+       aes(x = date, y = rating_value, 
+           color = rating_type, group = rating_type)) +
+  geom_line() +
+  facet_wrap(~ subgroup) +
+  scale_color_manual(values = c(&quot;darkgreen&quot;, &quot;orange&quot;)) + 
+  labs( 
+    x = &quot;Date&quot;, y = &quot;Rating&quot;, 
+    color = NULL, 
+    title = &quot;How (un)popular is Donald Trump?&quot;, 
+    subtitle = &quot;Estimates based on polls of all adults and polls of likely/registered voters&quot;, 
+    caption = &quot;Source: FiveThirtyEight modeling estimates&quot; 
+  ) + 
+  theme_minimal() +
+  theme(legend.position = &quot;bottom&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</div>
+</div>
