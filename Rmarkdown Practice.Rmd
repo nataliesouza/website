@@ -16,6 +16,7 @@ data(iris)
 #load packages
 pkgs <- c("rstatix","emmeans","psych","tidyr","tidyverse","psych","dplyr","ggplot2","lm.beta","car","Hmisc","skimr","janitor")
 lapply(pkgs, library, character.only = TRUE)
+setwd("/Users/nataliesouza/Documents/DataScience/website")
 ```
 
 # Intro
