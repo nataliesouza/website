@@ -1,17 +1,10 @@
 ---
-title: Rmarkdown_Practice
-author: Natalie Souza
-date: "`r format(Sys.Date(),'%e de %B, %Y')`"
+title: "Rmarkdown_Practice"
+author: "Natalie Souza"
+date: '2022-02-20'
 slug: rmarkdown-practice
 categories: []
 tags: []
-output: 
-  html_document:
-    theme: yeti #specifies the theme (structure/font)
-    highlight: zenburn #creates dark background for code
-    df_print: paged
-    toc: true
-    toc_float: true
 ---
 ```{r,warning=FALSE,message=FALSE,results=FALSE}
 library(datasets)
@@ -113,7 +106,7 @@ Cell 3 | Cell 4
 #Add this to date so that today's date is printed whenever doc is knitted
 title: "Rmarkdown_Intro"
 author: "Natalie Souza"
-date: "`r format(Sys.Date(),'%e de %B, %Y')`"
+date: '2022-02-20'
 ```
 
 >Most of this information was taken from this useful [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)
@@ -218,7 +211,7 @@ y <- x * 2
 ```{r,eval=FALSE}
 title: "Rmarkdown_Intro"
 author: "Natalie Souza"
-date: "`r format(Sys.Date(),'%e de %B, %Y')`"
+date: '2022-02-20'
 output: 
   html_document
   toc: true
