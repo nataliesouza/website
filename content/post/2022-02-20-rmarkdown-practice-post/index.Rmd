@@ -1,8 +1,8 @@
 ---
-title: "Rmarkdown_Practice"
-author: "Natalie Souza"
+title: "Rmarkdown Practice Post"
+author: "R package build"
 date: '2022-02-20'
-slug: rmarkdown-practice
+slug: rmarkdown-practice-post
 categories: []
 tags: []
 ---
