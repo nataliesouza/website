@@ -1,8 +1,147 @@
 ---
-title: Data Classes
-author: R package build
+title: "Data Classes"
+author: "R package build"
 date: '2022-02-22'
 slug: data-classes
 categories: []
 tags: []
 ---
+# Upload Url DF
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/df.csv'
+df <- read_csv(url)
+names(df)
+```
+
+# Factors
+```{r}
+x <- factor(c("BS", "MS", "PhD", "MS"))
+x
+typeof(x)
+class(x)
+glimpse(x)
+as.integer(x)
+```
+
+# Dates
+```{r}
+y <- as.Date("2020-01-01")
+typeof(y)
+class(y)
+as.integer(y)
+as.integer(y) / 365
+```
+
+# Data frames
+```{r}
+df <- data.frame(x = 1:2, y = 3:4)
+df
+typeof(df)
+class(df)
+```
+
+# Lists
+```{r}
+l <- list(
+  x = 1:4,
+  y = c("hi", "hello", "jello"),
+  z = c(TRUE, FALSE)
+)
+l
+df
+df %>%
+  pull(y)
+```
+
+# Upload Url Cat_Lovers
+```{r}
+url <- 'https://raw.githubusercontent.com/nataliesouza/tidyverse/main/cat-lovers.csv'
+cat_lovers <- read_csv(url)
+names(cat_lovers)
+```
+
+# Coerce when Plotting
+```{r}
+ggplot(cat_lovers, mapping = aes(x = handedness)) +
+  geom_bar()
+```
+
+# Manipulating Factors
+```{r}
+cat_lovers %>%
+  mutate(handedness = fct_infreq(handedness)) %>%
+  ggplot(mapping = aes(x = handedness)) +
+  geom_bar()
+```
+
+# Upload Url Hotels
+```{r}
+url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/hotels.csv'
+hotels <- read_csv(url)
+names(hotels)
+```
+
+```{r}
+hotels %>%
+  select(starts_with("arrival_"))
+```
+
+# Constructing Dates
+```{r}
+library(glue)
+hotels %>%
+  mutate(
+    arrival_date = glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}")
+    ) %>% 
+  relocate(arrival_date)
+```
+
+# Counting bookings per date
+```{r}
+hotels %>%
+  mutate(arrival_date = glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}")) %>%
+  count(arrival_date)
+```
+# Visualizing bookings per date
+```{r}
+hotels %>%
+  mutate(arrival_date = glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}")) %>%
+  count(arrival_date) %>%
+  ggplot(aes(x = arrival_date, y = n, group = 1)) +
+  geom_line()
+```
+
+# Revised Construct Dates
+```{r}
+library(lubridate)
+hotels %>%
+  mutate(
+    arrival_date = ymd(glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}"))
+    ) %>% 
+  relocate(arrival_date)
+```
+
+# Revised Count of bookings per date
+```{r}
+hotels %>%
+  mutate(arrival_date = ymd(glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}"))) %>% 
+  count(arrival_date)
+```
+
+# Revised visualization of bookings per date
+```{r}
+hotels %>%
+  mutate(arrival_date = ymd(glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}"))) %>% 
+  count(arrival_date) %>%
+  ggplot(aes(x = arrival_date, y = n, group = 1)) +
+  geom_line()
+```
+
+## Revised visulization of bookings per data using smooth curve
+```{r}
+hotels %>%
+  mutate(arrival_date = ymd(glue("{arrival_date_year} {arrival_date_month} {arrival_date_day_of_month}"))) %>% 
+  count(arrival_date) %>%
+  ggplot(aes(x = arrival_date, y = n, group = 1)) +
+  geom_smooth()
+```
