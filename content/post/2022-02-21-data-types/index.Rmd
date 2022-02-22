@@ -1,0 +1,160 @@
+---
+title: "Data Types"
+author: "R package build"
+date: '2022-02-21'
+slug: data-types
+categories: []
+tags: []
+---
+# Call library
+```{r}
+library(tidyverse)
+```
+
+# Upload Url
+```{r}
+url <- 'https://raw.githubusercontent.com/nataliesouza/tidyverse/main/cat-lovers.csv'
+cat_lovers <- read_csv(url)
+names(cat_lovers)
+```
+
+#Summarizing Cat Lovers Data Set
+```{r}
+cat_lovers %>%
+  summarise(mean_cats = mean(number_of_cats))
+```
+```{r}
+?mean
+```
+```{r}
+cat_lovers %>%
+  summarise(mean_cats = mean(number_of_cats, na.rm = TRUE))
+```
+
+```{r}
+glimpse(cat_lovers)
+```
+# Fixing the bad data in the numeric column 
+```{r}
+cat_lovers %>%
+  mutate(number_of_cats = case_when(
+    name == "Ginger Clark" ~ 2,
+    name == "Doug Bass"    ~ 3,
+    TRUE                   ~ as.numeric(number_of_cats)
+    )) %>%
+  summarise(mean_cats = mean(number_of_cats))
+```
+# Numeric Data Summarization
+```{r}
+cat_lovers %>%
+  mutate(
+    number_of_cats = case_when(
+      name == "Ginger Clark" ~ "2",
+      name == "Doug Bass"    ~ "3",
+      TRUE                   ~ number_of_cats
+      ),
+    number_of_cats = as.numeric(number_of_cats)
+    ) %>%
+  summarise(mean_cats = mean(number_of_cats))
+```
+
+```{r}
+cat_lovers <- cat_lovers %>%
+  mutate(
+    number_of_cats = case_when(
+      name == "Ginger Clark" ~ "2",
+      name == "Doug Bass"    ~ "3",
+      TRUE                   ~ number_of_cats
+      ),
+    number_of_cats = as.numeric(number_of_cats)
+    )
+```
+
+# Data Types (Logical, character, double, and integer)
+```{r}
+typeof(TRUE)
+typeof("hello")
+typeof(1.3335)
+typeof(7)
+typeof(7L)
+typeof(1:3)
+```
+#Concatenation
+```{r}
+c(1, 2, 3)
+c("Hello", "World!")
+c(c("hi", "hello"), c("bye", "jello"))
+```
+
+# Explicit Coercion
+Number vs. character 
+```{r}
+x <- 1:3
+x
+typeof(x)
+typeof(as.character(x))
+```
+```{r}
+y <- as.character(x)
+y
+typeof(y)
+```
+Number vs. Logical 
+```{r}
+x <- c(TRUE, FALSE)
+x
+typeof(x)
+typeof(as.numeric(x))
+```
+```{r}
+y <- as.numeric(x)
+y
+typeof(y)
+```
+#Implicit Coercion 
+```{r}
+c(1, "Hello")
+c(FALSE, 3L)
+c(1.2, 3L)
+c(2L, "two")
+```
+
+# Exercise 
+## Suppose we want to know the type of c(1, "a"). First, I'd look at:
+```{r}
+typeof(1)
+typeof("a")
+typeof(c(1, "a"))
+```
+# Special Values
+## +/- Infinity and Not a Number
+```{r}
+pi/0
+0/0
+1/0 - 1/0
+1/0 + 1/0
+```
+## Not Available "NA"
+```{r}
+x <- c(1, 2, 3, 4, NA)
+mean(x)
+mean(x, na.rm = TRUE)
+summary(x)
+typeof(NA)
+```
+# Mental model for NAs
+```{r}
+TRUE | NA
+FALSE | NA
+TRUE | TRUE
+TRUE | FALSE
+FALSE | TRUE
+FALSE | FALSE
+```
+
+
+
+
+
+
+
