@@ -6,6 +6,11 @@ slug: data-classes
 categories: []
 tags: []
 ---
+# Call library
+```{r}
+library(tidyverse)
+```
+
 # Upload Url DF
 ```{r}
 url <- 'https://raw.githubusercontent.com/dearbharat/tidyverse/main/df.csv'
