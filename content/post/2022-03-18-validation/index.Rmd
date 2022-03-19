@@ -6,3 +6,104 @@ slug: validation
 categories: []
 tags: []
 ---
+## Setup
+```{r}
+library(ISLR)
+library(boot)
+```
+## Set Seed: To reproduce the sampling for train - test split
+```{r}
+set.seed(1)
+head(Auto)
+dim(Auto)
+train <- sample(392, 196)
+```
+## Create an index to sample 50% records from Auto
+```{r}
+train <- sample(392, 196)
+head(train)
+```
+
+## Make the variables in Auto dataset as locally available objects 
+```{r}
+attach(Auto)
+lm.fit <- lm(mpg~horsepower, data = Auto, subset = train)
+lm.fit
+```
+```{r}
+mean((mpg - predict(lm.fit, Auto))[-train]^2)
+```
+```{r}
+plot(mpg, horsepower)
+```
+
+## Fit a quadratic function
+```{r}
+lm.fit.poly <- lm(mpg~poly(horsepower, 2), data = Auto, subset = train)
+lm.fit.poly
+```
+## As we increase the degree of the polynomial to 2 the error decreases
+```{r}
+mean((mpg - predict(lm.fit.poly, Auto))[-train]^2)
+```
+
+# LOO CV: Leave One Out Cross Validation
+```{r}
+glm.fit <- glm(mpg~horsepower, data = Auto)
+coef(glm.fit)
+```
+```{r}
+cv.err <- cv.glm(Auto, glm.fit)
+cv.err$delta
+```
+```{r}
+cv.error <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(mpg~poly(horsepower, d), data = Auto)
+  cv.error[d] <- cv.glm(Auto, glm.fit)$delta[1]
+}
+cv.error
+```
+```{r}
+plot(degree, cv.error, type = "b")
+```
+
+## K fold Cross Validation
+```{r}
+K = 10
+cv.error.10 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(mpg~poly(horsepower, d), data = Auto)
+  cv.error.10[d] <- cv.glm(Auto, glm.fit, K = K)$delta[1]
+}
+cv.error.10
+```
+
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.10, type = "b", col = "red")
+```
+# Bootstrap Validation 
+## Estimation of Accuracy of a Linear Model
+```{r}
+boot.fn <- function(data, index){
+  return(coef(lm(mpg~horsepower, data = data, subset = index)))
+}
+```
+```{r}
+boot.fn(Auto, 1:392)
+```
+
+```{r}
+set.seed(1)
+boot.fn(Auto, sample(392, 392, replace = T))
+```
+```{r}
+boot(Auto, boot.fn, 1000)
+boot.out <- boot(Auto, boot.fn, 1000)
+plot(boot.out)
+```
+
+
