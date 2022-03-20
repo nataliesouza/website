@@ -1,0 +1,292 @@
+---
+title: A01 Assignment
+author: R package build
+date: '2022-03-19'
+slug: a01-assignment
+categories: []
+tags: []
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="questions-and-answers" class="section level2">
+<h2>Questions and Answers</h2>
+</div>
+<div id="what-are-the-advantages-and-disadvantages-of-k-fold-cross-validation-relative-to" class="section level1">
+<h1>What are the advantages and disadvantages of k-fold cross validation relative to:</h1>
+<ol style="list-style-type: lower-roman">
+<li><p>Single Split Validation set approach: When compared to the Single Split Validation Set Approach, K Fold Cross Validation gives a better estimate of the test error because it is highly dependent on what is added to the training set. I also observed that the set approach usually overestimates the error on the entire data set. On the other hand, K fold Cross Validation is more complex than Single Split, and it is easier to manipulate the data.</p></li>
+<li><p>LOOCV: When compared to LOOCV, K Fold Cross Validation gives a better estimate of the error avoiding the need of considerable number of resources like time, processing power, memory etc. However, when trying to avoid bias, LOOCV is better since we are holding out a small validation displaying high variance.</p></li>
+</ol>
+<p>#Discuss Pros and cons of Bootstrapping
+Pros of Bootstrapping:
+It can be applied to multiple types of uses since it doe not require a parametric form, also if trying to find the confidence intervals of data set you are better off using bootstrapping, especially if your sample data set does not follow basic assumptions.</p>
+<p>Cons of Bootstrapping:
+Depending on the information on the population, Bootstrapping may not work well with small samples. It only gives you information about the sample based on what is provided in the original sample, so it cannot infer new information.</p>
+<div id="set-up" class="section level2">
+<h2>Set Up</h2>
+<pre class="r"><code>library(ISLR)
+library(boot)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(readxl)
+Real_estate_valuation_data_set_ &lt;- read_excel(&quot;~/Documents/DataScience/website/resources/_gen/assets/Real estate valuation data set..xlsx&quot;)</code></pre>
+</div>
+<div id="cross-validation" class="section level2">
+<h2>Cross Validation</h2>
+<pre class="r"><code>set.seed(1)
+View(Real_estate_valuation_data_set_)</code></pre>
+<pre><code>## Warning in View(Real_estate_valuation_data_set_): unable to open display</code></pre>
+<pre><code>## Error in .External2(C_dataviewer, x, title): unable to start data viewer</code></pre>
+</div>
+<div id="create-an-index-to-randomly-sample-5050-records" class="section level2">
+<h2>Create an index to randomly sample 50/50 records</h2>
+<pre class="r"><code>head(Real_estate_valuation_data_set_)</code></pre>
+<pre><code>## # A tibble: 6 × 8
+##      No X1_transaction_date X2_house_age X3_distance_to_the_ne… X4_number_of_co…
+##   &lt;dbl&gt;               &lt;dbl&gt;        &lt;dbl&gt;                  &lt;dbl&gt;            &lt;dbl&gt;
+## 1     1               2013.         32                     84.9               10
+## 2     2               2013.         19.5                  307.                 9
+## 3     3               2014.         13.3                  562.                 5
+## 4     4               2014.         13.3                  562.                 5
+## 5     5               2013.          5                    391.                 5
+## 6     6               2013.          7.1                 2175.                 3
+## # … with 3 more variables: X5_latitude &lt;dbl&gt;, X6_longitude &lt;dbl&gt;,
+## #   Y_house_price_of_unit_area &lt;dbl&gt;</code></pre>
+<pre class="r"><code>train &lt;- sample(414, 207)
+head(train)</code></pre>
+<pre><code>## [1] 324 167 129 299 270 187</code></pre>
+</div>
+<div id="make-the-variables-in-real_estate_valuation_data_set_-local" class="section level2">
+<h2>Make the variables in Real_estate_valuation_data_set_ local</h2>
+<pre class="r"><code>attach(Real_estate_valuation_data_set_)
+lm.fit &lt;- lm(formula = X2_house_age ~ X4_number_of_convenience_stores, data = Real_estate_valuation_data_set_, subset = train )
+lm.fit</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = X2_house_age ~ X4_number_of_convenience_stores, 
+##     data = Real_estate_valuation_data_set_, subset = train)
+## 
+## Coefficients:
+##                     (Intercept)  X4_number_of_convenience_stores  
+##                         19.0773                          -0.2732</code></pre>
+</div>
+<div id="plot-of-x1-and-y" class="section level2">
+<h2>Plot of X1 and Y</h2>
+<pre class="r"><code>plot(X1_transaction_date, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" />
+## Plot X2 and Y</p>
+<pre class="r"><code>plot(X2_house_age, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+## Plot of X3 and Y</p>
+<pre class="r"><code>plot(X3_distance_to_the_nearest_MRT_station, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" />
+## Predicted Error for Plot of X3 and Y</p>
+<pre class="r"><code>mean((X3_distance_to_the_nearest_MRT_station - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict.lm(lm.fit, Real_estate_valuation_data_set): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>
+<div id="plot-x4-and-y" class="section level2">
+<h2>Plot X4 and Y</h2>
+<pre class="r"><code>plot(X4_number_of_convenience_stores, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-1.png" width="672" />
+## Plot of X5 and Y</p>
+<pre class="r"><code>plot(X5_latitude, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" />
+## Predicted error for plot of X5 and Y</p>
+<pre class="r"><code>mean((X5_latitude - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict.lm(lm.fit, Real_estate_valuation_data_set): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>
+<div id="plot-of-x6-and-y" class="section level2">
+<h2>Plot of X6 and Y</h2>
+<pre class="r"><code>plot(X6_longitude, Y_house_price_of_unit_area)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-13-1.png" width="672" />
+## Predicted error for the plot of X6 and Y</p>
+<pre class="r"><code>mean((X6_longitude - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict.lm(lm.fit, Real_estate_valuation_data_set): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>
+<div id="fit-quadratic-function-to-x3-and-y" class="section level2">
+<h2>Fit quadratic function to X3 and Y</h2>
+<pre class="r"><code>lm.fit.poly &lt;- lm(X3_distance_to_the_nearest_MRT_station ~ poly(Y_house_price_of_unit_area, 2), data = Real_estate_valuation_data_set, subset = train)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>lm.fit.poly</code></pre>
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="when-degree-increses-to-2-the-predicted-error-decreases-for-the-plot-of-x3-and-y" class="section level2">
+<h2>When degree increses to 2 the predicted error decreases for the plot of X3 and Y</h2>
+<pre class="r"><code>mean((X3_distance_to_the_nearest_MRT_station - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict(lm.fit.poly, Real_estate_valuation_data_set): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="fit-a-quadratic-function-for-x5-and-y" class="section level2">
+<h2>Fit a quadratic function for X5 and Y</h2>
+<pre class="r"><code>lm.fit.poly &lt;- lm(X5_latitude ~ poly(Y_house_price_of_unit_area, 3), data = Real_estate_valuation_data_set, subset = train)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>lm.fit.poly</code></pre>
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="when-degree-increses-to-2-the-error-decreases-for-x5-and-y" class="section level2">
+<h2>When degree increses to 2 the error decreases for X5 and Y</h2>
+<pre class="r"><code>mean((X5_latitude - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict(lm.fit.poly, Real_estate_valuation_data_set): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="fit-a-quadratic-function-for-x6-and-y" class="section level2">
+<h2>Fit a quadratic function for X6 and Y</h2>
+<pre class="r"><code>lm.fit.poly &lt;- lm(X6_longitude ~ poly(Y_house_price_of_unit_area, 2), data = Real_estate_valuation_data_set, subset = train)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>lm.fit.poly</code></pre>
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="when-degree-increses-to-2-the-error-decreases-for-x6-and-y" class="section level2">
+<h2>When degree increses to 2 the error decreases for X6 and Y</h2>
+<pre class="r"><code>mean((X6_longitude - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)</code></pre>
+<pre><code>## Error in predict(lm.fit.poly, Real_estate_valuation_data_set): object &#39;lm.fit.poly&#39; not found</code></pre>
+</div>
+<div id="k-fold-cross-validation-for-x3-and-y-k-10" class="section level2">
+<h2>K fold Cross Validation for X3 and Y (K = 10)</h2>
+<pre class="r"><code>K = 10
+cv.error.10 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X3_distance_to_the_nearest_MRT_station~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.10</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.10, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+</div>
+<div id="k-fold-cross-validation-for-x3-and-y-k-5" class="section level2">
+<h2>K fold Cross Validation for X3 and Y (K = 5)</h2>
+<pre class="r"><code>K = 5
+cv.error.5 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X3_distance_to_the_nearest_MRT_station~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.5</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.5, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+<p>NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL</p>
+</div>
+<div id="k-fold-cross-validation-for-x5-and-y-k-10" class="section level2">
+<h2>K fold Cross Validation for X5 and Y (K = 10)</h2>
+<pre class="r"><code>K = 10
+cv.error.10 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X5_latitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.10</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.10, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+</div>
+<div id="k-fold-cross-validation-for-x5-and-y-k-5" class="section level2">
+<h2>K fold Cross Validation for X5 and Y (K = 5)</h2>
+<pre class="r"><code>K = 5
+cv.error.5 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X5_latitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.5</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.5, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+<p>NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL</p>
+</div>
+<div id="k-fold-cross-validation-for-x6-and-y-k-10" class="section level2">
+<h2>K fold Cross Validation for X6 and Y (K = 10)</h2>
+<pre class="r"><code>K = 10
+cv.error.10 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X6_longitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.10</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.10, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+</div>
+<div id="k-fold-cross-validation-for-x6-and-y-k-5" class="section level2">
+<h2>K fold Cross Validation for X6 and Y (K = 5)</h2>
+<pre class="r"><code>K = 5
+cv.error.5 &lt;- rep(0, 5)
+degree &lt;- 1:5
+for (d in degree){
+  glm.fit &lt;- glm(X6_longitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] &lt;- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>cv.error.5</code></pre>
+<pre><code>## [1] 0 0 0 0 0</code></pre>
+<pre class="r"><code>plot(degree, cv.error, type = &quot;b&quot;)</code></pre>
+<pre><code>## Error in xy.coords(x, y, xlabel, ylabel, log): object &#39;cv.error&#39; not found</code></pre>
+<pre class="r"><code>lines(degree, cv.error.5, type = &quot;b&quot;, col = &quot;red&quot;)</code></pre>
+<pre><code>## Error in plot.xy(xy.coords(x, y), type = type, ...): plot.new has not been called yet</code></pre>
+<p>NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL</p>
+</div>
+<div id="bootstrap-validation" class="section level2">
+<h2>Bootstrap Validation</h2>
+</div>
+</div>
+<div id="estimation-of-accuracy-of-a-linear-model-for-x3-and-y" class="section level1">
+<h1>Estimation of Accuracy of a Linear Model for X3 and Y</h1>
+<pre class="r"><code>boot.fn &lt;- function (data, index){
+  return(lm(X3_distance_to_the_nearest_MRT_station~Y_house_price_of_unit_area, data = data, subset = index))
+}</code></pre>
+<pre class="r"><code>boot.fn(Real_estate_valuation_data_set, 1:414)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>set.seed(1)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>
+<div id="estimation-of-accuracy-of-a-linear-model-for-x5-and-y" class="section level1">
+<h1>Estimation of Accuracy of a Linear Model for X5 and Y</h1>
+<pre class="r"><code>boot.fn &lt;- function (data, index){
+  return(lm(X5_latitude~Y_house_price_of_unit_area, data = data, subset = index))
+}</code></pre>
+<pre class="r"><code>boot.fn(Real_estate_valuation_data_set, 1:414)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>set.seed(42)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>
+<div id="estimation-of-accuracy-of-a-linear-model-for-x6-and-y" class="section level1">
+<h1>Estimation of Accuracy of a Linear Model for X6 and Y</h1>
+<pre class="r"><code>boot.fn &lt;- function (data, index){
+  return(lm(X6_longitude~Y_house_price_of_unit_area, data = data, subset = index))
+}</code></pre>
+<pre class="r"><code>boot.fn(Real_estate_valuation_data_set, 1:414)</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+<pre class="r"><code>set.seed(42)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))</code></pre>
+<pre><code>## Error in is.data.frame(data): object &#39;Real_estate_valuation_data_set&#39; not found</code></pre>
+</div>

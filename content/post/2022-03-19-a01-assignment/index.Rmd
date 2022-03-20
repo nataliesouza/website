@@ -1,0 +1,262 @@
+---
+title: A01 Assignment
+author: R package build
+date: '2022-03-19'
+slug: a01-assignment
+categories: []
+tags: []
+---
+## Questions and Answers 
+# What are the advantages and disadvantages of k-fold cross validation relative to:
+
+i. Single Split Validation set approach: When compared to the Single Split Validation Set Approach, K Fold Cross Validation gives a better estimate of the test error because it is highly dependent on what is added to the training set. I also observed that the set approach usually overestimates the error on the entire data set. On the other hand, K fold Cross Validation is more complex than Single Split, and it is easier to manipulate the data. 
+
+ii. LOOCV: When compared to LOOCV, K Fold Cross Validation gives a better estimate of the error avoiding the need of considerable number of resources like time, processing power, memory etc. However, when trying to avoid bias, LOOCV is better since we are holding out a small validation displaying high variance. 
+
+#Discuss Pros and cons of Bootstrapping
+Pros of Bootstrapping:
+It can be applied to multiple types of uses since it doe not require a parametric form, also if trying to find the confidence intervals of data set you are better off using bootstrapping, especially if your sample data set does not follow basic assumptions. 
+
+Cons of Bootstrapping:
+Depending on the information on the population, Bootstrapping may not work well with small samples. It only gives you information about the sample based on what is provided in the original sample, so it cannot infer new information.
+
+## Set Up
+```{r}
+library(ISLR)
+library(boot)
+library(dplyr)
+library(readxl)
+Real_estate_valuation_data_set_ <- read_excel("~/Documents/DataScience/website/resources/_gen/assets/Real estate valuation data set..xlsx")
+```
+
+## Cross Validation
+```{r, echo=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+```{r}
+set.seed(1)
+View(Real_estate_valuation_data_set_)
+```
+## Create an index to randomly sample 50/50 records
+```{r}
+head(Real_estate_valuation_data_set_)
+train <- sample(414, 207)
+head(train)
+```
+## Make the variables in Real_estate_valuation_data_set_ local
+```{r}
+attach(Real_estate_valuation_data_set_)
+lm.fit <- lm(formula = X2_house_age ~ X4_number_of_convenience_stores, data = Real_estate_valuation_data_set_, subset = train )
+lm.fit
+```
+
+## Plot of X1 and Y
+```{r}
+plot(X1_transaction_date, Y_house_price_of_unit_area)
+```
+## Plot X2 and Y
+```{r}
+plot(X2_house_age, Y_house_price_of_unit_area)
+```
+## Plot of X3 and Y
+```{r}
+plot(X3_distance_to_the_nearest_MRT_station, Y_house_price_of_unit_area)
+```
+## Predicted Error for Plot of X3 and Y
+```{r}
+mean((X3_distance_to_the_nearest_MRT_station - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)
+```
+## Plot X4 and Y
+```{r}
+plot(X4_number_of_convenience_stores, Y_house_price_of_unit_area)
+```
+## Plot of X5 and Y
+```{r}
+plot(X5_latitude, Y_house_price_of_unit_area)
+```
+## Predicted error for plot of X5 and Y
+```{r}
+mean((X5_latitude - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)
+```
+## Plot of X6 and Y
+```{r}
+plot(X6_longitude, Y_house_price_of_unit_area)
+```
+## Predicted error for the plot of X6 and Y
+```{r}
+mean((X6_longitude - predict(lm.fit, Real_estate_valuation_data_set))[-train]^2)
+```
+## Fit quadratic function to X3 and Y
+```{r}
+lm.fit.poly <- lm(X3_distance_to_the_nearest_MRT_station ~ poly(Y_house_price_of_unit_area, 2), data = Real_estate_valuation_data_set, subset = train)
+lm.fit.poly
+```
+
+## When degree increses to 2 the predicted error decreases for the plot of X3 and Y
+```{r}
+mean((X3_distance_to_the_nearest_MRT_station - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)
+```
+
+## Fit a quadratic function for X5 and Y
+```{r}
+lm.fit.poly <- lm(X5_latitude ~ poly(Y_house_price_of_unit_area, 3), data = Real_estate_valuation_data_set, subset = train)
+lm.fit.poly
+```
+## When degree increses to 2 the error decreases for X5 and Y
+```{r}
+mean((X5_latitude - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)
+```
+## Fit a quadratic function for X6 and Y
+```{r}
+lm.fit.poly <- lm(X6_longitude ~ poly(Y_house_price_of_unit_area, 2), data = Real_estate_valuation_data_set, subset = train)
+lm.fit.poly
+```
+
+## When degree increses to 2 the error decreases for X6 and Y
+```{r}
+mean((X6_longitude - predict(lm.fit.poly, Real_estate_valuation_data_set))[-train]^2)
+```
+
+## K fold Cross Validation for X3 and Y (K = 10)
+```{r}
+K = 10
+cv.error.10 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X3_distance_to_the_nearest_MRT_station~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.10
+```
+
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.10, type = "b", col = "red")
+```
+## K fold Cross Validation for X3 and Y (K = 5)
+```{r}
+K = 5
+cv.error.5 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X3_distance_to_the_nearest_MRT_station~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.5
+```
+
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.5, type = "b", col = "red")
+```
+NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL 
+
+## K fold Cross Validation for X5 and Y (K = 10)
+```{r}
+K = 10
+cv.error.10 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X5_latitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.10
+```
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.10, type = "b", col = "red")
+```
+## K fold Cross Validation for X5 and Y (K = 5)
+```{r}
+K = 5
+cv.error.5 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X5_latitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.5
+```
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.5, type = "b", col = "red")
+```
+NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL
+
+## K fold Cross Validation for X6 and Y (K = 10)
+```{r}
+K = 10
+cv.error.10 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X6_longitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.10[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.10
+```
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.10, type = "b", col = "red")
+```
+## K fold Cross Validation for X6 and Y (K = 5)
+```{r}
+K = 5
+cv.error.5 <- rep(0, 5)
+degree <- 1:5
+for (d in degree){
+  glm.fit <- glm(X6_longitude~poly(Y_house_price_of_unit_area, d), data = Real_estate_valuation_data_set)
+  cv.error.5[d] <- cv.glm(Real_estate_valuation_data_set, glm.fit, K = K)$delta[1]
+}
+cv.error.5
+```
+
+```{r}
+plot(degree, cv.error, type = "b")
+lines(degree, cv.error.5, type = "b", col = "red")
+```
+NO SIGNIFICANT RESULTS FOR THE ABOVE TRIAL 
+
+## Bootstrap Validation 
+# Estimation of Accuracy of a Linear Model for X3 and Y
+```{r}
+boot.fn <- function (data, index){
+  return(lm(X3_distance_to_the_nearest_MRT_station~Y_house_price_of_unit_area, data = data, subset = index))
+}
+```
+```{r}
+boot.fn(Real_estate_valuation_data_set, 1:414)
+```
+```{r}
+set.seed(1)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))
+```
+
+# Estimation of Accuracy of a Linear Model for X5 and Y
+```{r}
+boot.fn <- function (data, index){
+  return(lm(X5_latitude~Y_house_price_of_unit_area, data = data, subset = index))
+}
+```
+```{r}
+boot.fn(Real_estate_valuation_data_set, 1:414)
+```
+```{r}
+set.seed(42)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))
+```
+
+# Estimation of Accuracy of a Linear Model for X6 and Y
+```{r}
+boot.fn <- function (data, index){
+  return(lm(X6_longitude~Y_house_price_of_unit_area, data = data, subset = index))
+}
+```
+```{r}
+boot.fn(Real_estate_valuation_data_set, 1:414)
+```
+```{r}
+set.seed(42)
+boot.fn(Real_estate_valuation_data_set, sample(414, 414, replace = T))
+```
+
+
