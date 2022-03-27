@@ -1,0 +1,320 @@
+---
+title: "A02:Regression Models"
+author: "R package build"
+date: '2022-03-26'
+slug: a02-regression-models
+categories: []
+tags: []
+---
+# Call libraries
+```{r}
+pacman::p_load(pacman, magrittr, productplots, psych, RColorBrewer, tidyverse)
+```
+
+# Import data from excel file
+```{r}
+library(readxl)
+data <- read_excel("~/Documents/DataScience/website/resources/_gen/assets/Professor_Proposes_Data.xlsx")
+summary(data)
+```
+# Checking variables
+```{r}
+names(data)
+```
+# Checking if dependent variable follows a normal distribution 
+```{r}
+hist(data$Price)
+```
+
+# Save dataset to tibble named "df"
+```{r}
+df <- data %>%
+  as_tibble() %>%
+  print()
+```
+# Cleaning up dataframe
+```{r}
+df %<>%
+  select(Carat:Price) %>%
+  print()
+```
+# Bar chart of Price
+```{r}
+library(ggthemes)
+df %>%
+  ggplot() +
+  geom_bar(aes(Price, fill = Price)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = "none"
+  ) +
+  theme_clean() +
+  ggtitle("Bar chart of price")
+# Frequencies for Carat
+df %>% count(Price)
+
+```
+# Bar chart of Carat
+```{r}
+summary(log10(data$Carat))
+df %>%
+  ggplot() +
+  geom_bar(aes(Carat, fill = Carat)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of carat")
+# Create dichotomous 0.9 carat/not variable for exploration
+df %<>%
+  mutate(
+    carat = ifelse(
+      Carat %in%
+      c("0.9"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies for Carat
+df %>% count(carat)
+
+#Stacked bar chart 
+df %>%
+  ggplot(aes(carat, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+
+
+# Bar chart of Color
+```{r}
+df %>%
+  ggplot() +
+  geom_bar(aes(Colour, fill = Colour)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of color")
+
+# Create dichotomous J/not variable for exploration
+df %<>%
+  mutate(
+    color = ifelse(
+      Colour %in%
+      c("J"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies for Color
+df %>% count(color)
+
+#Stacked bar chart 
+df %>%
+  ggplot(aes(color, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+# Bar chart of Clarity 
+```{r}
+df %>%
+  ggplot() +
+  geom_bar(aes(Clarity, fill = Clarity)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of clarity")
+
+# Create dichotomous SI2/not variable for exploration
+df %<>%
+  mutate(
+    clarity = ifelse(
+      Clarity %in%
+      c("SI2"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies for Clarity
+df %>% count(clarity)
+
+# 100% stacked bar chart
+df %>%
+  ggplot(aes(clarity, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+# Bar chart of Cut
+```{r}
+df %>%
+  ggplot() + 
+  geom_bar(aes(Cut, fill = Cut)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of cut")
+
+# Create dichotomous V/not variable for exploration
+df %<>%
+  mutate(
+    cut = ifelse(
+      Cut %in%
+      c("V"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies of cut
+df %>% count(cut)
+
+# 100% stacked bar chart
+df %>%
+  ggplot(aes(cut, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+# Bar chart of Certification 
+```{r}
+df %>%
+  ggplot() + 
+  geom_bar(aes(Certification, fill = Certification)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of certification")
+
+# Create dichotomous GIA/not variable for exploration
+df %<>%
+  mutate(
+    certification = ifelse(
+      Certification %in%
+      c("GIA"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies of certification
+df %>% count(certification)
+
+# 100% stacked bar chart
+df %>%
+  ggplot(aes(certification, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+# Bar chart of Polish
+```{r}
+df %>%
+  ggplot() + 
+  geom_bar(aes(Polish, fill = Polish)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of polish")
+
+# Create dichotomous G/not variable for exploration
+df %<>%
+  mutate(
+    polish = ifelse(
+      Polish %in%
+      c("G"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies of polish
+df %>% count(polish)
+
+# 100% stacked bar chart
+df %>%
+  ggplot(aes(polish, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+# Bar chart of Symmetry
+```{r}
+df %>%
+  ggplot() + 
+  geom_bar(aes(Symmetry, fill = Symmetry)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = "none"
+  )  +
+  theme_clean() +
+  ggtitle("Bar chart of symmetry")
+
+# Create dichotomous V/not variable for exploration
+df %<>%
+  mutate(
+    symmetry = ifelse(
+      Symmetry %in%
+      c("V"),
+      "yes", "no")
+  ) %>%
+  print()
+
+# Frequencies of symmetry
+df %>% count(symmetry)
+
+# 100% stacked bar chart
+df %>%
+  ggplot(aes(symmetry, fill = Price)) + 
+  geom_bar(position = "fill")
+```
+
+# Plot of data
+```{r}
+plot(data)
+# Carat and Certification seem to have a correlation 
+```
+# Multiple Regression
+```{r}
+multiple.regression <- lm(Price ~ Carat + Certification, data = data) 
+summary(multiple.regression)
+```
+
+# Bootstrap resampling and tidy regression models
+```{r}
+library(tidyverse)
+library(broom)
+ggplot(data, aes(Carat, Price)) + 
+    geom_point()
+
+nlsfit <- nls(Carat ~ k / Price + b, data, start = list(k = 1, b = 0))
+summary(nlsfit)
+
+ggplot(data, aes(Price, Carat)) +
+    geom_point() +
+    geom_line(aes(y = predict(nlsfit)))
+```
+# Bootstrapping models 
+```{r}
+library(rsample)
+set.seed(1)
+boots <- bootstraps(data, times = 2000, apparent = TRUE)
+boots
+
+fit_nls_on_bootstrap <- function(split) {
+    nls(Carat ~ k / Price + b, analysis(split), start = list(k = 1, b = 0))
+}
+boot_models <-
+  boots %>% 
+  mutate(model = map(splits, fit_nls_on_bootstrap),
+         coef_info = map(model, tidy))
+
+boot_coefs <- 
+  boot_models %>% 
+  unnest(coef_info)
+```
+
+# Cofidence intervals 
+```{r}
+percentile_intervals <- int_pctl(boot_models, coef_info)
+percentile_intervals
+```
+

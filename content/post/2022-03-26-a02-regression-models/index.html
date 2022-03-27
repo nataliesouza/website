@@ -1,0 +1,559 @@
+---
+title: "A02:Regression Models"
+author: "R package build"
+date: '2022-03-26'
+slug: a02-regression-models
+categories: []
+tags: []
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="call-libraries" class="section level1">
+<h1>Call libraries</h1>
+<pre class="r"><code>pacman::p_load(pacman, magrittr, productplots, psych, RColorBrewer, tidyverse)</code></pre>
+</div>
+<div id="import-data-from-excel-file" class="section level1">
+<h1>Import data from excel file</h1>
+<pre class="r"><code>library(readxl)
+data &lt;- read_excel(&quot;~/Documents/DataScience/website/resources/_gen/assets/Professor_Proposes_Data.xlsx&quot;)
+summary(data)</code></pre>
+<pre><code>##      Carat           Colour            Clarity              Cut           
+##  Min.   :0.0900   Length:440         Length:440         Length:440        
+##  1st Qu.:0.3000   Class :character   Class :character   Class :character  
+##  Median :0.8100   Mode  :character   Mode  :character   Mode  :character  
+##  Mean   :0.6693                                                           
+##  3rd Qu.:1.0100                                                           
+##  Max.   :1.5800                                                           
+##  Certification         Polish            Symmetry             Price     
+##  Length:440         Length:440         Length:440         Min.   : 160  
+##  Class :character   Class :character   Class :character   1st Qu.: 520  
+##  Mode  :character   Mode  :character   Mode  :character   Median :2169  
+##                                                           Mean   :1717  
+##                                                           3rd Qu.:3012  
+##                                                           Max.   :3145  
+##    Wholesaler   
+##  Min.   :1.000  
+##  1st Qu.:2.000  
+##  Median :2.000  
+##  Mean   :2.318  
+##  3rd Qu.:3.000  
+##  Max.   :3.000</code></pre>
+</div>
+<div id="checking-variables" class="section level1">
+<h1>Checking variables</h1>
+<pre class="r"><code>names(data)</code></pre>
+<pre><code>## [1] &quot;Carat&quot;         &quot;Colour&quot;        &quot;Clarity&quot;       &quot;Cut&quot;          
+## [5] &quot;Certification&quot; &quot;Polish&quot;        &quot;Symmetry&quot;      &quot;Price&quot;        
+## [9] &quot;Wholesaler&quot;</code></pre>
+</div>
+<div id="checking-if-dependent-variable-follows-a-normal-distribution" class="section level1">
+<h1>Checking if dependent variable follows a normal distribution</h1>
+<pre class="r"><code>hist(data$Price)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+<div id="save-dataset-to-tibble-named-df" class="section level1">
+<h1>Save dataset to tibble named “df”</h1>
+<pre class="r"><code>df &lt;- data %&gt;%
+  as_tibble() %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 9
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price Wholesaler
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt;      &lt;dbl&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000          1
+##  2  0.92 I      SI2     V     AGS           G      G         3000          1
+##  3  0.82 F      SI2     I     GIA           X      X         3004          1
+##  4  0.81 G      SI1     I     GIA           X      V         3004          1
+##  5  0.9  J      VS2     V     GIA           V      V         3006          1
+##  6  0.87 F      SI2     I     AGS           G      V         3007          1
+##  7  0.8  D      SI2     I     GIA           V      V         3008          1
+##  8  0.84 F      SI1     G     GIA           V      V         3010          1
+##  9  0.8  D      SI2     V     GIA           V      V         3012          1
+## 10  0.8  D      SI2     V     GIA           V      X         3012          1
+## # … with 430 more rows</code></pre>
+</div>
+<div id="cleaning-up-dataframe" class="section level1">
+<h1>Cleaning up dataframe</h1>
+<pre class="r"><code>df %&lt;&gt;%
+  select(Carat:Price) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 8
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000
+##  2  0.92 I      SI2     V     AGS           G      G         3000
+##  3  0.82 F      SI2     I     GIA           X      X         3004
+##  4  0.81 G      SI1     I     GIA           X      V         3004
+##  5  0.9  J      VS2     V     GIA           V      V         3006
+##  6  0.87 F      SI2     I     AGS           G      V         3007
+##  7  0.8  D      SI2     I     GIA           V      V         3008
+##  8  0.84 F      SI1     G     GIA           V      V         3010
+##  9  0.8  D      SI2     V     GIA           V      V         3012
+## 10  0.8  D      SI2     V     GIA           V      X         3012
+## # … with 430 more rows</code></pre>
+</div>
+<div id="bar-chart-of-price" class="section level1">
+<h1>Bar chart of Price</h1>
+<pre class="r"><code>library(ggthemes)
+df %&gt;%
+  ggplot() +
+  geom_bar(aes(Price, fill = Price)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = &quot;none&quot;
+  ) +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of price&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<pre class="r"><code># Frequencies for Carat
+df %&gt;% count(Price)</code></pre>
+<pre><code>## # A tibble: 197 × 2
+##    Price     n
+##    &lt;dbl&gt; &lt;int&gt;
+##  1   160     6
+##  2   180    11
+##  3   190     5
+##  4   320     2
+##  5   330     6
+##  6   340     6
+##  7   360     5
+##  8   372     1
+##  9   404     1
+## 10   439     1
+## # … with 187 more rows</code></pre>
+</div>
+<div id="bar-chart-of-carat" class="section level1">
+<h1>Bar chart of Carat</h1>
+<pre class="r"><code>summary(log10(data$Carat))</code></pre>
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+## -1.045757 -0.522879 -0.091515 -0.270115  0.004321  0.198657</code></pre>
+<pre class="r"><code>df %&gt;%
+  ggplot() +
+  geom_bar(aes(Carat, fill = Carat)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of carat&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous 0.9 carat/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    carat = ifelse(
+      Carat %in%
+      c(&quot;0.9&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 9
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no   
+## # … with 430 more rows</code></pre>
+<pre class="r"><code># Frequencies for Carat
+df %&gt;% count(carat)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   carat     n
+##   &lt;chr&gt; &lt;int&gt;
+## 1 no      429
+## 2 yes      11</code></pre>
+<pre class="r"><code>#Stacked bar chart 
+df %&gt;%
+  ggplot(aes(carat, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-8-2.png" width="672" /></p>
+</div>
+<div id="bar-chart-of-color" class="section level1">
+<h1>Bar chart of Color</h1>
+<pre class="r"><code>df %&gt;%
+  ggplot() +
+  geom_bar(aes(Colour, fill = Colour)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of color&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous J/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    color = ifelse(
+      Colour %in%
+      c(&quot;J&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 10
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows</code></pre>
+<pre class="r"><code># Frequencies for Color
+df %&gt;% count(color)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   color     n
+##   &lt;chr&gt; &lt;int&gt;
+## 1 no      368
+## 2 yes      72</code></pre>
+<pre class="r"><code>#Stacked bar chart 
+df %&gt;%
+  ggplot(aes(color, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-9-2.png" width="672" />
+# Bar chart of Clarity</p>
+<pre class="r"><code>df %&gt;%
+  ggplot() +
+  geom_bar(aes(Clarity, fill = Clarity)) +
+  theme(
+    axis.title.x = element_blank(),
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of clarity&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous SI2/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    clarity = ifelse(
+      Clarity %in%
+      c(&quot;SI2&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 11
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows, and 1 more variable: clarity &lt;chr&gt;</code></pre>
+<pre class="r"><code># Frequencies for Clarity
+df %&gt;% count(clarity)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   clarity     n
+##   &lt;chr&gt;   &lt;int&gt;
+## 1 no        330
+## 2 yes       110</code></pre>
+<pre class="r"><code># 100% stacked bar chart
+df %&gt;%
+  ggplot(aes(clarity, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-10-2.png" width="672" />
+# Bar chart of Cut</p>
+<pre class="r"><code>df %&gt;%
+  ggplot() + 
+  geom_bar(aes(Cut, fill = Cut)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of cut&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous V/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    cut = ifelse(
+      Cut %in%
+      c(&quot;V&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 12
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows, and 2 more variables: clarity &lt;chr&gt;, cut &lt;chr&gt;</code></pre>
+<pre class="r"><code># Frequencies of cut
+df %&gt;% count(cut)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   cut       n
+##   &lt;chr&gt; &lt;int&gt;
+## 1 no      343
+## 2 yes      97</code></pre>
+<pre class="r"><code># 100% stacked bar chart
+df %&gt;%
+  ggplot(aes(cut, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-2.png" width="672" />
+# Bar chart of Certification</p>
+<pre class="r"><code>df %&gt;%
+  ggplot() + 
+  geom_bar(aes(Certification, fill = Certification)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of certification&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous GIA/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    certification = ifelse(
+      Certification %in%
+      c(&quot;GIA&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 13
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows, and 3 more variables: clarity &lt;chr&gt;, cut &lt;chr&gt;,
+## #   certification &lt;chr&gt;</code></pre>
+<pre class="r"><code># Frequencies of certification
+df %&gt;% count(certification)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   certification     n
+##   &lt;chr&gt;         &lt;int&gt;
+## 1 no              175
+## 2 yes             265</code></pre>
+<pre class="r"><code># 100% stacked bar chart
+df %&gt;%
+  ggplot(aes(certification, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-12-2.png" width="672" />
+# Bar chart of Polish</p>
+<pre class="r"><code>df %&gt;%
+  ggplot() + 
+  geom_bar(aes(Polish, fill = Polish)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of polish&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous G/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    polish = ifelse(
+      Polish %in%
+      c(&quot;G&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 14
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows, and 4 more variables: clarity &lt;chr&gt;, cut &lt;chr&gt;,
+## #   certification &lt;chr&gt;, polish &lt;chr&gt;</code></pre>
+<pre class="r"><code># Frequencies of polish
+df %&gt;% count(polish)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   polish     n
+##   &lt;chr&gt;  &lt;int&gt;
+## 1 no       275
+## 2 yes      165</code></pre>
+<pre class="r"><code># 100% stacked bar chart
+df %&gt;%
+  ggplot(aes(polish, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-13-2.png" width="672" />
+# Bar chart of Symmetry</p>
+<pre class="r"><code>df %&gt;%
+  ggplot() + 
+  geom_bar(aes(Symmetry, fill = Symmetry)) + 
+  theme(
+    axis.title.x = element_blank(), 
+    legend.position = &quot;none&quot;
+  )  +
+  theme_clean() +
+  ggtitle(&quot;Bar chart of symmetry&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<pre class="r"><code># Create dichotomous V/not variable for exploration
+df %&lt;&gt;%
+  mutate(
+    symmetry = ifelse(
+      Symmetry %in%
+      c(&quot;V&quot;),
+      &quot;yes&quot;, &quot;no&quot;)
+  ) %&gt;%
+  print()</code></pre>
+<pre><code>## # A tibble: 440 × 15
+##    Carat Colour Clarity Cut   Certification Polish Symmetry Price carat color
+##    &lt;dbl&gt; &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;         &lt;chr&gt;  &lt;chr&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;
+##  1  0.92 I      SI2     G     AGS           V      V         3000 no    no   
+##  2  0.92 I      SI2     V     AGS           G      G         3000 no    no   
+##  3  0.82 F      SI2     I     GIA           X      X         3004 no    no   
+##  4  0.81 G      SI1     I     GIA           X      V         3004 no    no   
+##  5  0.9  J      VS2     V     GIA           V      V         3006 yes   yes  
+##  6  0.87 F      SI2     I     AGS           G      V         3007 no    no   
+##  7  0.8  D      SI2     I     GIA           V      V         3008 no    no   
+##  8  0.84 F      SI1     G     GIA           V      V         3010 no    no   
+##  9  0.8  D      SI2     V     GIA           V      V         3012 no    no   
+## 10  0.8  D      SI2     V     GIA           V      X         3012 no    no   
+## # … with 430 more rows, and 5 more variables: clarity &lt;chr&gt;, cut &lt;chr&gt;,
+## #   certification &lt;chr&gt;, polish &lt;chr&gt;, symmetry &lt;chr&gt;</code></pre>
+<pre class="r"><code># Frequencies of symmetry
+df %&gt;% count(symmetry)</code></pre>
+<pre><code>## # A tibble: 2 × 2
+##   symmetry     n
+##   &lt;chr&gt;    &lt;int&gt;
+## 1 no         234
+## 2 yes        206</code></pre>
+<pre class="r"><code># 100% stacked bar chart
+df %&gt;%
+  ggplot(aes(symmetry, fill = Price)) + 
+  geom_bar(position = &quot;fill&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-14-2.png" width="672" /></p>
+</div>
+<div id="plot-of-data" class="section level1">
+<h1>Plot of data</h1>
+<pre class="r"><code>plot(data)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code># Carat and Certification seem to have a correlation </code></pre>
+</div>
+<div id="multiple-regression" class="section level1">
+<h1>Multiple Regression</h1>
+<pre class="r"><code>multiple.regression &lt;- lm(Price ~ Carat + Certification, data = data) 
+summary(multiple.regression)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Price ~ Carat + Certification, data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -1811.06  -142.61   -88.61   119.61   967.79 
+## 
+## Coefficients:
+##                  Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)        517.94     136.30   3.800 0.000165 ***
+## Carat             2965.20      73.07  40.581  &lt; 2e-16 ***
+## CertificationDOW -1985.87     438.35  -4.530 7.62e-06 ***
+## CertificationEGL  -911.70     128.10  -7.117 4.59e-12 ***
+## CertificationGIA  -771.89     125.67  -6.142 1.84e-09 ***
+## CertificationIGI  -713.02     146.33  -4.873 1.55e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 420.5 on 434 degrees of freedom
+## Multiple R-squared:  0.8735, Adjusted R-squared:  0.8721 
+## F-statistic: 599.5 on 5 and 434 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+<div id="bootstrap-resampling-and-tidy-regression-models" class="section level1">
+<h1>Bootstrap resampling and tidy regression models</h1>
+<pre class="r"><code>library(tidyverse)
+library(broom)
+ggplot(data, aes(Carat, Price)) + 
+    geom_point()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<pre class="r"><code>nlsfit &lt;- nls(Carat ~ k / Price + b, data, start = list(k = 1, b = 0))
+summary(nlsfit)</code></pre>
+<pre><code>## 
+## Formula: Carat ~ k/Price + b
+## 
+## Parameters:
+##     Estimate Std. Error t value Pr(&gt;|t|)    
+## k -239.98928    7.85221  -30.56   &lt;2e-16 ***
+## b    0.98271    0.01449   67.80   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.2148 on 438 degrees of freedom
+## 
+## Number of iterations to convergence: 1 
+## Achieved convergence tolerance: 1.104e-08</code></pre>
+<pre class="r"><code>ggplot(data, aes(Price, Carat)) +
+    geom_point() +
+    geom_line(aes(y = predict(nlsfit)))</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-17-2.png" width="672" />
+# Bootstrapping models</p>
+<pre class="r"><code>library(rsample)
+set.seed(1)
+boots &lt;- bootstraps(data, times = 2000, apparent = TRUE)
+boots</code></pre>
+<pre><code>## # Bootstrap sampling with apparent sample 
+## # A tibble: 2,001 × 2
+##    splits            id           
+##    &lt;list&gt;            &lt;chr&gt;        
+##  1 &lt;split [440/170]&gt; Bootstrap0001
+##  2 &lt;split [440/168]&gt; Bootstrap0002
+##  3 &lt;split [440/163]&gt; Bootstrap0003
+##  4 &lt;split [440/160]&gt; Bootstrap0004
+##  5 &lt;split [440/170]&gt; Bootstrap0005
+##  6 &lt;split [440/157]&gt; Bootstrap0006
+##  7 &lt;split [440/163]&gt; Bootstrap0007
+##  8 &lt;split [440/158]&gt; Bootstrap0008
+##  9 &lt;split [440/163]&gt; Bootstrap0009
+## 10 &lt;split [440/169]&gt; Bootstrap0010
+## # … with 1,991 more rows</code></pre>
+<pre class="r"><code>fit_nls_on_bootstrap &lt;- function(split) {
+    nls(Carat ~ k / Price + b, analysis(split), start = list(k = 1, b = 0))
+}
+boot_models &lt;-
+  boots %&gt;% 
+  mutate(model = map(splits, fit_nls_on_bootstrap),
+         coef_info = map(model, tidy))
+
+boot_coefs &lt;- 
+  boot_models %&gt;% 
+  unnest(coef_info)</code></pre>
+</div>
+<div id="cofidence-intervals" class="section level1">
+<h1>Cofidence intervals</h1>
+<pre class="r"><code>percentile_intervals &lt;- int_pctl(boot_models, coef_info)
+percentile_intervals</code></pre>
+<pre><code>## # A tibble: 2 × 6
+##   term    .lower .estimate  .upper .alpha .method   
+##   &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;     
+## 1 b        0.953     0.984    1.02   0.05 percentile
+## 2 k     -273.     -242.    -215.     0.05 percentile</code></pre>
+</div>
