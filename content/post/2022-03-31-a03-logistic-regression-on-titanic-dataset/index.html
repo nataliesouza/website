@@ -1,0 +1,646 @@
+---
+title: 'A03: Logistic Regression on Titanic Dataset'
+author: R package build
+date: '2022-03-31'
+slug: a03-logistic-regression-on-titanic-dataset
+categories: []
+tags: []
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<div id="call-library" class="section level2">
+<h2>Call library</h2>
+<pre class="r"><code>library(titanic)
+library(readr)
+library(dplyr)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(ggplot2)
+library(ggthemes)
+library(RColorBrewer)
+library(broom)
+library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
+<pre><code>## ✓ tibble  3.1.6     ✓ stringr 1.4.0
+## ✓ tidyr   1.2.0     ✓ forcats 0.5.1
+## ✓ purrr   0.3.4</code></pre>
+<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>library(rpart)</code></pre>
+</div>
+<div id="load-datasets" class="section level2">
+<h2>Load datasets</h2>
+<pre class="r"><code>test_data &lt;- read_csv(&quot;https://raw.githubusercontent.com/nataliesouza/website/master/test.csv&quot;)</code></pre>
+<pre><code>## Rows: 418 Columns: 11
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (5): Name, Sex, Ticket, Cabin, Embarked
+## dbl (6): PassengerId, Pclass, Age, SibSp, Parch, Fare
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>titanic_test$Survived &lt;- NA
+head(test_data)</code></pre>
+<pre><code>## # A tibble: 6 × 11
+##   PassengerId Pclass Name    Sex     Age SibSp Parch Ticket  Fare Cabin Embarked
+##         &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   
+## 1         892      3 Kelly,… male   34.5     0     0 330911  7.83 &lt;NA&gt;  Q       
+## 2         893      3 Wilkes… fema…  47       1     0 363272  7    &lt;NA&gt;  S       
+## 3         894      2 Myles,… male   62       0     0 240276  9.69 &lt;NA&gt;  Q       
+## 4         895      3 Wirz, … male   27       0     0 315154  8.66 &lt;NA&gt;  S       
+## 5         896      3 Hirvon… fema…  22       1     1 31012… 12.3  &lt;NA&gt;  S       
+## 6         897      3 Svenss… male   14       0     0 7538    9.22 &lt;NA&gt;  S</code></pre>
+<pre class="r"><code>train_data &lt;- read_csv(&quot;https://raw.githubusercontent.com/nataliesouza/website/master/train.csv&quot;)</code></pre>
+<pre><code>## Rows: 891 Columns: 12
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (5): Name, Sex, Ticket, Cabin, Embarked
+## dbl (7): PassengerId, Survived, Pclass, Age, SibSp, Parch, Fare
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>head(train_data)</code></pre>
+<pre><code>## # A tibble: 6 × 12
+##   PassengerId Survived Pclass Name    Sex     Age SibSp Parch Ticket  Fare Cabin
+##         &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt; &lt;chr&gt;
+## 1           1        0      3 Braund… male     22     1     0 A/5 2…  7.25 &lt;NA&gt; 
+## 2           2        1      1 Cuming… fema…    38     1     0 PC 17… 71.3  C85  
+## 3           3        1      3 Heikki… fema…    26     0     0 STON/…  7.92 &lt;NA&gt; 
+## 4           4        1      1 Futrel… fema…    35     1     0 113803 53.1  C123 
+## 5           5        0      3 Allen,… male     35     0     0 373450  8.05 &lt;NA&gt; 
+## 6           6        0      3 Moran,… male     NA     0     0 330877  8.46 &lt;NA&gt; 
+## # … with 1 more variable: Embarked &lt;chr&gt;</code></pre>
+</div>
+<div id="cleaning-data-set" class="section level2">
+<h2>Cleaning Data Set</h2>
+<pre class="r"><code>nrow(train_data)</code></pre>
+<pre><code>## [1] 891</code></pre>
+<pre class="r"><code>sum(is.na(train_data))</code></pre>
+<pre><code>## [1] 866</code></pre>
+<pre class="r"><code>colSums(is.na(train_data))</code></pre>
+<pre><code>## PassengerId    Survived      Pclass        Name         Sex         Age 
+##           0           0           0           0           0         177 
+##       SibSp       Parch      Ticket        Fare       Cabin    Embarked 
+##           0           0           0           0         687           2</code></pre>
+<pre class="r"><code>str(train_data)</code></pre>
+<pre><code>## spec_tbl_df [891 × 12] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+##  $ PassengerId: num [1:891] 1 2 3 4 5 6 7 8 9 10 ...
+##  $ Survived   : num [1:891] 0 1 1 1 0 0 0 0 1 1 ...
+##  $ Pclass     : num [1:891] 3 1 3 1 3 3 1 3 3 2 ...
+##  $ Name       : chr [1:891] &quot;Braund, Mr. Owen Harris&quot; &quot;Cumings, Mrs. John Bradley (Florence Briggs Thayer)&quot; &quot;Heikkinen, Miss. Laina&quot; &quot;Futrelle, Mrs. Jacques Heath (Lily May Peel)&quot; ...
+##  $ Sex        : chr [1:891] &quot;male&quot; &quot;female&quot; &quot;female&quot; &quot;female&quot; ...
+##  $ Age        : num [1:891] 22 38 26 35 35 NA 54 2 27 14 ...
+##  $ SibSp      : num [1:891] 1 1 0 1 0 0 0 3 0 1 ...
+##  $ Parch      : num [1:891] 0 0 0 0 0 0 0 1 2 0 ...
+##  $ Ticket     : chr [1:891] &quot;A/5 21171&quot; &quot;PC 17599&quot; &quot;STON/O2. 3101282&quot; &quot;113803&quot; ...
+##  $ Fare       : num [1:891] 7.25 71.28 7.92 53.1 8.05 ...
+##  $ Cabin      : chr [1:891] NA &quot;C85&quot; NA &quot;C123&quot; ...
+##  $ Embarked   : chr [1:891] &quot;S&quot; &quot;C&quot; &quot;S&quot; &quot;S&quot; ...
+##  - attr(*, &quot;spec&quot;)=
+##   .. cols(
+##   ..   PassengerId = col_double(),
+##   ..   Survived = col_double(),
+##   ..   Pclass = col_double(),
+##   ..   Name = col_character(),
+##   ..   Sex = col_character(),
+##   ..   Age = col_double(),
+##   ..   SibSp = col_double(),
+##   ..   Parch = col_double(),
+##   ..   Ticket = col_character(),
+##   ..   Fare = col_double(),
+##   ..   Cabin = col_character(),
+##   ..   Embarked = col_character()
+##   .. )
+##  - attr(*, &quot;problems&quot;)=&lt;externalptr&gt;</code></pre>
+<pre class="r"><code>train &lt;- train_data[, -(names(train_data) == &quot;PassengerId&quot;)] #has no value to the expected model
+train_data &lt;- na.omit(train_data)</code></pre>
+</div>
+<div id="missing-data-from-test_data" class="section level2">
+<h2>Missing Data From test_data</h2>
+<pre class="r"><code>nrow(test_data)</code></pre>
+<pre><code>## [1] 418</code></pre>
+<pre class="r"><code>sum(is.na(test_data))</code></pre>
+<pre><code>## [1] 414</code></pre>
+<pre class="r"><code>colSums(is.na(test_data))</code></pre>
+<pre><code>## PassengerId      Pclass        Name         Sex         Age       SibSp 
+##           0           0           0           0          86           0 
+##       Parch      Ticket        Fare       Cabin    Embarked 
+##           0           0           1         327           0</code></pre>
+<pre class="r"><code>str(test_data)</code></pre>
+<pre><code>## spec_tbl_df [418 × 11] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+##  $ PassengerId: num [1:418] 892 893 894 895 896 897 898 899 900 901 ...
+##  $ Pclass     : num [1:418] 3 3 2 3 3 3 3 2 3 3 ...
+##  $ Name       : chr [1:418] &quot;Kelly, Mr. James&quot; &quot;Wilkes, Mrs. James (Ellen Needs)&quot; &quot;Myles, Mr. Thomas Francis&quot; &quot;Wirz, Mr. Albert&quot; ...
+##  $ Sex        : chr [1:418] &quot;male&quot; &quot;female&quot; &quot;male&quot; &quot;male&quot; ...
+##  $ Age        : num [1:418] 34.5 47 62 27 22 14 30 26 18 21 ...
+##  $ SibSp      : num [1:418] 0 1 0 0 1 0 0 1 0 2 ...
+##  $ Parch      : num [1:418] 0 0 0 0 1 0 0 1 0 0 ...
+##  $ Ticket     : chr [1:418] &quot;330911&quot; &quot;363272&quot; &quot;240276&quot; &quot;315154&quot; ...
+##  $ Fare       : num [1:418] 7.83 7 9.69 8.66 12.29 ...
+##  $ Cabin      : chr [1:418] NA NA NA NA ...
+##  $ Embarked   : chr [1:418] &quot;Q&quot; &quot;S&quot; &quot;Q&quot; &quot;S&quot; ...
+##  - attr(*, &quot;spec&quot;)=
+##   .. cols(
+##   ..   PassengerId = col_double(),
+##   ..   Pclass = col_double(),
+##   ..   Name = col_character(),
+##   ..   Sex = col_character(),
+##   ..   Age = col_double(),
+##   ..   SibSp = col_double(),
+##   ..   Parch = col_double(),
+##   ..   Ticket = col_character(),
+##   ..   Fare = col_double(),
+##   ..   Cabin = col_character(),
+##   ..   Embarked = col_character()
+##   .. )
+##  - attr(*, &quot;problems&quot;)=&lt;externalptr&gt;</code></pre>
+</div>
+<div id="checking-for-survival-patterns-in-train_data" class="section level2">
+<h2>Checking for Survival Patterns in train_data</h2>
+<pre class="r"><code>table(train_data$Survived, train_data$Pclass)</code></pre>
+<pre><code>##    
+##       1   2   3
+##   0  52   3   5
+##   1 106  12   5</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$Sex) #seems to be related</code></pre>
+<pre><code>##    
+##     female male
+##   0      6   54
+##   1     82   41</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$Age)</code></pre>
+<pre><code>##    
+##     0.92 1 2 3 4 6 11 14 15 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32
+##   0    0 0 2 0 0 0  0  0  0  0  0  1  3  1  0  0  2  2  0  1  0  3  1  2  0
+##   1    1 1 1 1 3 1  1  1  1  3  3  3  3  2  3  4  7  2  1  4  2  2  3  3  3
+##    
+##     32.5 33 34 35 36 36.5 37 38 39 40 41 42 43 44 45 45.5 46 47 48 49 50 51 52
+##   0    0  1  0  0  3    1  2  1  1  1  0  1  0  1  3    1  2  4  0  1  3  0  1
+##   1    1  3  2  6  8    0  1  3  4  3  1  2  1  2  0    0  0  1  5  4  1  2  3
+##    
+##     53 54 55 56 57 58 60 61 62 63 64 65 70 71 80
+##   0  0  2  1  1  1  2  0  2  1  0  1  2  1  1  0
+##   1  1  1  0  2  0  3  2  0  0  1  0  0  0  0  1</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$SibSp)</code></pre>
+<pre><code>##    
+##      0  1  2  3
+##   0 41 17  1  1
+##   1 69 47  5  2</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$Parch) #seems to be related</code></pre>
+<pre><code>##    
+##      0  1  2  4
+##   0 42 11  6  1
+##   1 80 26 17  0</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$Fare) #seems to be related</code></pre>
+<pre><code>##    
+##     0 5 7.65 8.05 10.4625 10.5 12.475 12.875 13 13.7917 16.7 25.5875 25.9292 26
+##   0 2 1    3    0       2    1      0      1  0       0    0       1       0  1
+##   1 0 0    0    1       0    3      2      0  4       1    2       0       2  2
+##    
+##     26.2833 26.2875 26.3875 26.55 27.7208 27.75 28.5 28.7125 29.7 30 30.5
+##   0       0       0       0     3       0     1    1       1    2  1    1
+##   1       1       3       1     4       1     0    0       0    0  3    2
+##    
+##     30.6958 31 32.3208 33.5 34.0208 34.6542 35.5 38.5 39 39.4 39.6 40.125 49.5
+##   0       1  0       1    1       1       1    1    1  0    0    0      1    0
+##   1       0  1       0    0       0       0    2    0  2    1    1      0    1
+##    
+##     49.5042 50.4958 51.4792 51.8625 52 52.5542 53.1 55 55.4417 55.9 56.9292 57
+##   0       0       1       0       1  2       0    2  0       0    1       0  0
+##   1       1       0       1       0  1       3    3  1       1    1       2  2
+##    
+##     57.9792 61.175 61.9792 63.3583 66.6 69.3 71 71.2833 75.25 76.2917 76.7292
+##   0       0      1       1       0    1    0  1       0     0       0       0
+##   1       2      0       0       1    1    2  1       1     1       1       3
+##    
+##     77.2875 77.9583 78.2667 78.85 79.2 79.65 81.8583 83.1583 83.475 86.5
+##   0       2       0       0     1    2     1       0       0      1    0
+##   1       0       3       2     0    1     2       1       3      1    3
+##    
+##     89.1042 90 91.0792 93.5 106.425 108.9 110.8833 113.275 120 134.5 135.6333
+##   0       0  1       0    0       1     1        1       1   0     0        0
+##   1       1  3       2    2       0     1        2       2   4     2        2
+##    
+##     146.5208 151.55 153.4625 164.8667 211.3375 211.5 227.525 247.5208 262.375
+##   0        0      2        1        0        0     1       0        1       0
+##   1        1      1        2        1        3     0       2        1       2
+##    
+##     263 512.3292
+##   0   2        0
+##   1   2        2</code></pre>
+<pre class="r"><code>table(train_data$Survived, train_data$Embarked)</code></pre>
+<pre><code>##    
+##      C  Q  S
+##   0 17  1 42
+##   1 48  1 74</code></pre>
+</div>
+<div id="checking-the-distribution" class="section level2">
+<h2>Checking the Distribution</h2>
+<pre class="r"><code>fare0 &lt;- hist(train_data[train_data$Survived == &quot;0&quot;,]$Fare)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>fare1 &lt;- hist(train_data[train_data$Survived == &quot;1&quot;,]$Fare)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
+<pre class="r"><code>parch0 &lt;- hist(train_data[train_data$Survived == &quot;0&quot;,]$Parch)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-3.png" width="672" /></p>
+<pre class="r"><code>parch1 &lt;- hist(train_data[train_data$Survived == &quot;1&quot;,]$Parch)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-4.png" width="672" /></p>
+</div>
+<div id="checking-for-patterns-in-gender" class="section level2">
+<h2>Checking for Patterns in Gender</h2>
+<pre class="r"><code>women &lt;- subset(train_data, train_data$Sex==&quot;female&quot;)
+count(women)</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##       n
+##   &lt;int&gt;
+## 1    88</code></pre>
+<pre class="r"><code>number_of_women &lt;- count(women)
+
+survived_women &lt;- subset(women, women$Survived==1)
+count(survived_women)</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##       n
+##   &lt;int&gt;
+## 1    82</code></pre>
+<pre class="r"><code>number_of_survived_women &lt;- count(survived_women)
+
+rate_women &lt;- number_of_survived_women/number_of_women
+rate_women</code></pre>
+<pre><code>##           n
+## 1 0.9318182</code></pre>
+<pre class="r"><code>men &lt;- subset(train_data, train_data$Sex==&quot;male&quot;)
+count(men)</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##       n
+##   &lt;int&gt;
+## 1    95</code></pre>
+<pre class="r"><code>number_of_men &lt;- count(men)
+
+survived_men &lt;- subset(men, men$Survived==1)
+count(survived_men)</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##       n
+##   &lt;int&gt;
+## 1    41</code></pre>
+<pre class="r"><code>number_of_survived_men &lt;- count(survived_men)
+
+rate_men &lt;- number_of_survived_men/number_of_men
+rate_men</code></pre>
+<pre><code>##           n
+## 1 0.4315789</code></pre>
+</div>
+<div id="visualization-of-the-data-male-and-female-who-died-and-survived" class="section level2">
+<h2>Visualization of the Data (male and female who died and survived)</h2>
+<pre class="r"><code>table(train_data$Sex, train_data$Survived)</code></pre>
+<pre><code>##         
+##           0  1
+##   female  6 82
+##   male   54 41</code></pre>
+<pre class="r"><code>prop.table(table(train_data$Sex, train_data$Survived), margin = 1)</code></pre>
+<pre><code>##         
+##                   0          1
+##   female 0.06818182 0.93181818
+##   male   0.56842105 0.43157895</code></pre>
+</div>
+<div id="plot-showing-the-majority-of-passengers-who-survived" class="section level2">
+<h2>Plot showing the majority of passengers who survived</h2>
+<pre class="r"><code>df &lt;- ggplot(train_data, aes(Survived))
+df + geom_bar(aes(fill = Sex), width=0.85, colour=&quot;red&quot;) + scale_fill_brewer() +
+  ylab(&quot;Survival Count By Gender&quot;) +
+  xlab(&quot;Survived: No = 0, Yes = 1&quot;) +
+  ggtitle(&quot;Gender Vs. Survival (train_data)&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+</div>
+<div id="random-forest-model" class="section level2">
+<h2>Random Forest Model</h2>
+<pre class="r"><code>library(randomForest)</code></pre>
+<pre><code>## randomForest 4.7-1</code></pre>
+<pre><code>## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre><code>## 
+## Attaching package: &#39;randomForest&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     margin</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     combine</code></pre>
+<pre class="r"><code>train_data$Survived &lt;- as.factor(train_data$Survived)
+rf &lt;- randomForest(
+  Survived ~ .,
+  data = train_data
+)
+
+rf #this is based on the removed missing values</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(formula = Survived ~ ., data = train_data) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 3
+## 
+##         OOB estimate of  error rate: 24.04%
+## Confusion matrix:
+##    0   1 class.error
+## 0 30  30   0.5000000
+## 1 14 109   0.1138211</code></pre>
+<p>##Converting the rest of the variables into factors</p>
+<pre class="r"><code>test_data$Sex &lt;- as.factor(test_data$Sex)
+test_data$Embarked &lt;- as.factor(test_data$Embarked)
+test_data$Parch &lt;- as.factor(test_data$Parch)
+test_data$Fare &lt;- as.factor(test_data$Fare)
+
+train_data$Sex &lt;- as.factor(train_data$Sex)
+train_data$Embarked &lt;- as.factor(train_data$Embarked)
+test_data$Parch &lt;- as.factor(test_data$Parch)
+test_data$Fare &lt;- as.factor(test_data$Fare)
+sapply(train_data, class)</code></pre>
+<pre><code>## PassengerId    Survived      Pclass        Name         Sex         Age 
+##   &quot;numeric&quot;    &quot;factor&quot;   &quot;numeric&quot; &quot;character&quot;    &quot;factor&quot;   &quot;numeric&quot; 
+##       SibSp       Parch      Ticket        Fare       Cabin    Embarked 
+##   &quot;numeric&quot;   &quot;numeric&quot; &quot;character&quot;   &quot;numeric&quot; &quot;character&quot;    &quot;factor&quot;</code></pre>
+<pre class="r"><code>importance(rf)</code></pre>
+<pre><code>##             MeanDecreaseGini
+## PassengerId        9.7440125
+## Pclass             0.8391135
+## Name               9.9072380
+## Sex               16.5930729
+## Age               11.7118467
+## SibSp              1.3580348
+## Parch              1.5350181
+## Ticket             8.2695193
+## Fare              10.1929275
+## Cabin              8.5607932
+## Embarked           1.0898050</code></pre>
+<pre class="r"><code>create_rfplot &lt;- function(rf, type){
+  imp &lt;- importance(rf, type = type, scale = F)
+  featureImportance &lt;- data.frame(Feature = row.names(imp), Importance = imp[, 1])
+  p &lt;- ggplot(featureImportance, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;#53cfff&quot;, width = 0.65) +
+  coord_flip() +
+  theme_light(base_size = 20) +
+  theme(axis.title.x = element_text(size = 15, color = &quot;black&quot;),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 15, color = &quot;black&quot;),
+        axis.text.y = element_text(size = 15, color = &quot;black&quot;))
+  return(p)
+} # I saw a similar function in a website and I thought it would work well with the titanic data, so I just adjusted it to my variables
+create_rfplot(rf, type = 2)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-14-1.png" width="672" />
+# Logistic Regression</p>
+<pre class="r"><code>test_data &lt;- read_csv(&quot;https://raw.githubusercontent.com/nataliesouza/website/master/test.csv&quot;)</code></pre>
+<pre><code>## Rows: 418 Columns: 11
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (5): Name, Sex, Ticket, Cabin, Embarked
+## dbl (6): PassengerId, Pclass, Age, SibSp, Parch, Fare
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>train_data &lt;- read_csv(&quot;https://raw.githubusercontent.com/nataliesouza/website/master/train.csv&quot;)</code></pre>
+<pre><code>## Rows: 891 Columns: 12
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (5): Name, Sex, Ticket, Cabin, Embarked
+## dbl (7): PassengerId, Survived, Pclass, Age, SibSp, Parch, Fare
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>test_data$Survived &lt;- NA
+complete_data &lt;- rbind(train_data, test_data)
+str(complete_data)</code></pre>
+<pre><code>## spec_tbl_df [1,309 × 12] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
+##  $ PassengerId: num [1:1309] 1 2 3 4 5 6 7 8 9 10 ...
+##  $ Survived   : num [1:1309] 0 1 1 1 0 0 0 0 1 1 ...
+##  $ Pclass     : num [1:1309] 3 1 3 1 3 3 1 3 3 2 ...
+##  $ Name       : chr [1:1309] &quot;Braund, Mr. Owen Harris&quot; &quot;Cumings, Mrs. John Bradley (Florence Briggs Thayer)&quot; &quot;Heikkinen, Miss. Laina&quot; &quot;Futrelle, Mrs. Jacques Heath (Lily May Peel)&quot; ...
+##  $ Sex        : chr [1:1309] &quot;male&quot; &quot;female&quot; &quot;female&quot; &quot;female&quot; ...
+##  $ Age        : num [1:1309] 22 38 26 35 35 NA 54 2 27 14 ...
+##  $ SibSp      : num [1:1309] 1 1 0 1 0 0 0 3 0 1 ...
+##  $ Parch      : num [1:1309] 0 0 0 0 0 0 0 1 2 0 ...
+##  $ Ticket     : chr [1:1309] &quot;A/5 21171&quot; &quot;PC 17599&quot; &quot;STON/O2. 3101282&quot; &quot;113803&quot; ...
+##  $ Fare       : num [1:1309] 7.25 71.28 7.92 53.1 8.05 ...
+##  $ Cabin      : chr [1:1309] NA &quot;C85&quot; NA &quot;C123&quot; ...
+##  $ Embarked   : chr [1:1309] &quot;S&quot; &quot;C&quot; &quot;S&quot; &quot;S&quot; ...
+##  - attr(*, &quot;spec&quot;)=
+##   .. cols(
+##   ..   PassengerId = col_double(),
+##   ..   Survived = col_double(),
+##   ..   Pclass = col_double(),
+##   ..   Name = col_character(),
+##   ..   Sex = col_character(),
+##   ..   Age = col_double(),
+##   ..   SibSp = col_double(),
+##   ..   Parch = col_double(),
+##   ..   Ticket = col_character(),
+##   ..   Fare = col_double(),
+##   ..   Cabin = col_character(),
+##   ..   Embarked = col_character()
+##   .. )
+##  - attr(*, &quot;problems&quot;)=&lt;externalptr&gt;</code></pre>
+</div>
+<div id="analyzing-complete-data-df" class="section level2">
+<h2>Analyzing Complete Data df</h2>
+<pre class="r"><code>colSums(is.na(complete_data))</code></pre>
+<pre><code>## PassengerId    Survived      Pclass        Name         Sex         Age 
+##           0         418           0           0           0         263 
+##       SibSp       Parch      Ticket        Fare       Cabin    Embarked 
+##           0           0           0           1        1014           2</code></pre>
+<pre class="r"><code>complete_data$Embarked[complete_data$Embarked==&quot;&quot;] &lt;- &quot;S&quot;
+complete_data$Age[is.na(complete_data$Age)] &lt;- median(complete_data$Age,na.rm=T)</code></pre>
+</div>
+<div id="cleaning-up-complete-data-df" class="section level2">
+<h2>Cleaning up Complete Data df</h2>
+<pre class="r"><code>titanic_data &lt;- complete_data %&gt;% select(-c(Cabin, PassengerId, Ticket, Name))
+titanic_data$Survived &lt;- as.factor(titanic_data$Survived)
+titanic_data$Sex &lt;- as.factor(titanic_data$Sex)
+titanic_data$Pclass &lt;- as.factor(titanic_data$Pclass)
+titanic_data$Embarked &lt;- as.factor(titanic_data$Embarked)</code></pre>
+</div>
+<div id="setting-seed" class="section level2">
+<h2>Setting Seed</h2>
+<pre class="r"><code>set.seed(222)
+t = sample(1:nrow(titanic_data), 0.7*nrow(titanic_data))
+train = titanic_data[t,]
+test = titanic_data[-t,]</code></pre>
+</div>
+<div id="creating-model" class="section level2">
+<h2>Creating model</h2>
+<pre class="r"><code>library(car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode</code></pre>
+<pre class="r"><code>library(car)
+model &lt;- lm(Survived~., data=train)</code></pre>
+<pre><code>## Warning in model.response(mf, &quot;numeric&quot;): using type = &quot;numeric&quot; with a factor
+## response will be ignored</code></pre>
+<pre><code>## Warning in Ops.factor(y, z$residuals): &#39;-&#39; not meaningful for factors</code></pre>
+<pre class="r"><code>t = vif(model)</code></pre>
+<pre><code>## Warning in Ops.factor(r, 2): &#39;^&#39; not meaningful for factors</code></pre>
+<pre><code>## Warning in cov2cor(v): diag(.) had 0 or NA entries; non-finite result is
+## doubtful</code></pre>
+<pre class="r"><code>sort(t, decreasing=TRUE)</code></pre>
+<pre><code>## [1] 2 2 1 1 1 1 1</code></pre>
+<pre class="r"><code>model1&lt;- glm(as.factor(Survived)~., family=&quot;binomial&quot;, data=train)
+summary(model1)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = as.factor(Survived) ~ ., family = &quot;binomial&quot;, data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.5839  -0.6087  -0.4260   0.6391   2.4877  
+## 
+## Coefficients:
+##               Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  4.5455647  0.5786727   7.855 3.99e-15 ***
+## Pclass2     -0.9630368  0.3505721  -2.747  0.00601 ** 
+## Pclass3     -2.1241696  0.3532376  -6.013 1.82e-09 ***
+## Sexmale     -2.7152212  0.2381949 -11.399  &lt; 2e-16 ***
+## Age         -0.0462536  0.0094900  -4.874 1.09e-06 ***
+## SibSp       -0.2747138  0.1280880  -2.145  0.03197 *  
+## Parch       -0.0723815  0.1377491  -0.525  0.59926    
+## Fare        -0.0004097  0.0027800  -0.147  0.88284    
+## EmbarkedQ   -0.1936344  0.4444190  -0.436  0.66305    
+## EmbarkedS   -0.6694532  0.2808797  -2.383  0.01715 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 839.91  on 626  degrees of freedom
+## Residual deviance: 562.64  on 617  degrees of freedom
+##   (289 observations deleted due to missingness)
+## AIC: 582.64
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+<div id="discarding-parch-and-embarked-variables" class="section level2">
+<h2>Discarding Parch and Embarked Variables</h2>
+<pre class="r"><code>stepmodel = step(model1, direction = &quot;both&quot;)</code></pre>
+<pre><code>## Start:  AIC=582.64
+## as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Fare + 
+##     Embarked
+## 
+##            Df Deviance    AIC
+## - Fare      1   562.66 580.66
+## - Parch     1   562.92 580.92
+## &lt;none&gt;          562.64 582.64
+## - Embarked  2   569.11 585.11
+## - SibSp     1   567.88 585.88
+## - Age       1   588.76 606.76
+## - Pclass    2   604.41 620.41
+## - Sex       1   725.79 743.79
+## 
+## Step:  AIC=580.66
+## as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Parch + Embarked
+## 
+##            Df Deviance    AIC
+## - Parch     1   562.98 578.98
+## &lt;none&gt;          562.66 580.66
+## + Fare      1   562.64 582.64
+## - Embarked  2   569.18 583.18
+## - SibSp     1   568.10 584.10
+## - Age       1   588.85 604.85
+## - Pclass    2   620.36 634.36
+## - Sex       1   726.35 742.35
+## 
+## Step:  AIC=578.98
+## as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Embarked
+## 
+##            Df Deviance    AIC
+## &lt;none&gt;          562.98 578.98
+## + Parch     1   562.66 580.66
+## + Fare      1   562.92 580.92
+## - Embarked  2   569.57 581.57
+## - SibSp     1   570.03 584.03
+## - Age       1   588.86 602.86
+## - Pclass    2   620.80 632.80
+## - Sex       1   732.47 746.47</code></pre>
+<pre class="r"><code>formula(stepmodel)</code></pre>
+<pre><code>## as.factor(Survived) ~ Pclass + Sex + Age + SibSp + Embarked</code></pre>
+<pre class="r"><code>summary(stepmodel)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = as.factor(Survived) ~ Pclass + Sex + Age + SibSp + 
+##     Embarked, family = &quot;binomial&quot;, data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.6202  -0.6033  -0.4282   0.6473   2.4877  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  4.449296   0.502459   8.855  &lt; 2e-16 ***
+## Pclass2     -0.936860   0.316243  -2.962  0.00305 ** 
+## Pclass3     -2.098614   0.299964  -6.996 2.63e-12 ***
+## Sexmale     -2.683254   0.231134 -11.609  &lt; 2e-16 ***
+## Age         -0.045670   0.009415  -4.851 1.23e-06 ***
+## SibSp       -0.298032   0.122038  -2.442  0.01460 *  
+## EmbarkedQ   -0.165349   0.440575  -0.375  0.70743    
+## EmbarkedS   -0.660128   0.276800  -2.385  0.01709 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 839.91  on 626  degrees of freedom
+## Residual deviance: 562.98  on 619  degrees of freedom
+##   (289 observations deleted due to missingness)
+## AIC: 578.98
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+<div id="predicting-score-of-train" class="section level2">
+<h2>Predicting Score of “train”</h2>
+<pre class="r"><code>train$score &lt;- predict(stepmodel, newdata = train, type=&quot;response&quot;)
+head(train$score)</code></pre>
+<pre><code>##          1          2          3          4          5          6 
+## 0.06532408 0.24792449 0.26103690 0.60151645 0.74496111 0.64074897</code></pre>
+<pre class="r"><code>tail(train$score)</code></pre>
+<pre><code>##        911        912        913        914        915        916 
+## 0.06970965 0.94755685 0.68436043 0.24782104 0.35266616 0.12941907</code></pre>
+</div>
+<div id="final-model-and-predictions" class="section level2">
+<h2>Final Model and Predictions</h2>
+<pre class="r"><code>train$prediction &lt;- ifelse(train$score&gt;=0.6, 1, 0)
+table(factor(train$prediction), factor(train$Survived))</code></pre>
+<pre><code>##    
+##       0   1
+##   0 342  86
+##   1  39 160</code></pre>
+<div id="the-model-indicates-an-accuracy-of-80.06---502627-0.8006-in-regards-to-the-train-data-set" class="section level3">
+<h3>The model indicates an accuracy of 80.06% -&gt; 502/627 = 0.8006 in regards to the train data-set</h3>
+<pre class="r"><code>test$score&lt;-predict(stepmodel, test, type = &quot;response&quot;)
+head(test$score)</code></pre>
+<pre><code>##          1          2          3          4          5          6 
+## 0.09149820 0.91802392 0.86906061 0.06970965 0.14471261 0.20419518</code></pre>
+<pre class="r"><code>test$predicted&lt;-ifelse(test$score&gt;=0.6, 1, 0)
+head(test$predicted)</code></pre>
+<pre><code>## 1 2 3 4 5 6 
+## 0 1 1 0 0 0</code></pre>
+<pre class="r"><code>table(factor(test$predicted), factor(test$Survived))</code></pre>
+<pre><code>##    
+##       0   1
+##   0 152  32
+##   1  16  62</code></pre>
+</div>
+<div id="the-model-indicates-an-accuracy-of-81.68---214262-0.8168-in-regards-to-the-test-data-set" class="section level3">
+<h3>The model indicates an accuracy of 81.68% -&gt; 214/262 = 0.8168 in regards to the test data-set</h3>
+</div>
+<div id="comments-i-tried-using-the-cheat-sheet-for-python-datadrame-to-r-dataframe-from-what-i-was-able-to-find-online-for-this-titanic-data-set-from-kaggles-tutorials." class="section level3">
+<h3>Comments: I tried using the cheat sheet for Python datadrame to R dataframe, from what I was able to find online for this titanic data-set from kaggle’s tutorials.</h3>
+</div>
+</div>

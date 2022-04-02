@@ -66,6 +66,7 @@ df %>%
   )  +
   theme_clean() +
   ggtitle("Bar chart of carat")
+       
 # Create dichotomous 0.9 carat/not variable for exploration
 df %<>%
   mutate(
@@ -83,6 +84,7 @@ df %>% count(carat)
 df %>%
   ggplot(aes(carat, fill = Price)) + 
   geom_bar(position = "fill")
+
 ```
 
 

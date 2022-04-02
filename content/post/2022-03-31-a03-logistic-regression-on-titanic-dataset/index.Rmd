@@ -1,0 +1,233 @@
+---
+title: 'A03: Logistic Regression on Titanic Dataset'
+author: R package build
+date: '2022-03-31'
+slug: a03-logistic-regression-on-titanic-dataset
+categories: []
+tags: []
+---
+## Call library
+```{r}
+library(titanic)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(ggthemes)
+library(RColorBrewer)
+library(broom)
+library(tidyverse)
+library(rpart)
+```
+
+## Load datasets
+```{r}
+test_data <- read_csv("https://raw.githubusercontent.com/nataliesouza/website/master/test.csv")
+titanic_test$Survived <- NA
+head(test_data)
+
+train_data <- read_csv("https://raw.githubusercontent.com/nataliesouza/website/master/train.csv")
+head(train_data)
+```
+## Cleaning Data Set
+```{r}
+nrow(train_data)
+sum(is.na(train_data))
+colSums(is.na(train_data))
+str(train_data)
+train <- train_data[, -(names(train_data) == "PassengerId")] #has no value to the expected model
+train_data <- na.omit(train_data)
+```
+## Missing Data From test_data
+```{r}
+nrow(test_data)
+sum(is.na(test_data))
+colSums(is.na(test_data))
+str(test_data)
+```
+## Checking for Survival Patterns in train_data
+```{r}
+table(train_data$Survived, train_data$Pclass)
+table(train_data$Survived, train_data$Sex) #seems to be related
+table(train_data$Survived, train_data$Age)
+table(train_data$Survived, train_data$SibSp)
+table(train_data$Survived, train_data$Parch) #seems to be related
+table(train_data$Survived, train_data$Fare) #seems to be related
+table(train_data$Survived, train_data$Embarked)
+```
+## Checking the Distribution 
+```{r}
+fare0 <- hist(train_data[train_data$Survived == "0",]$Fare)
+fare1 <- hist(train_data[train_data$Survived == "1",]$Fare)
+
+parch0 <- hist(train_data[train_data$Survived == "0",]$Parch)
+parch1 <- hist(train_data[train_data$Survived == "1",]$Parch)
+```
+
+
+## Checking for Patterns in Gender
+```{r}
+women <- subset(train_data, train_data$Sex=="female")
+count(women)
+number_of_women <- count(women)
+
+survived_women <- subset(women, women$Survived==1)
+count(survived_women)
+number_of_survived_women <- count(survived_women)
+
+rate_women <- number_of_survived_women/number_of_women
+rate_women
+```
+```{r}
+men <- subset(train_data, train_data$Sex=="male")
+count(men)
+number_of_men <- count(men)
+
+survived_men <- subset(men, men$Survived==1)
+count(survived_men)
+number_of_survived_men <- count(survived_men)
+
+rate_men <- number_of_survived_men/number_of_men
+rate_men
+```
+## Visualization of the Data (male and female who died and survived)
+```{r}
+table(train_data$Sex, train_data$Survived)
+```
+```{r}
+prop.table(table(train_data$Sex, train_data$Survived), margin = 1)
+```
+
+## Plot showing the majority of passengers who survived
+```{r}
+df <- ggplot(train_data, aes(Survived))
+df + geom_bar(aes(fill = Sex), width=0.85, colour="red") + scale_fill_brewer() +
+  ylab("Survival Count By Gender") +
+  xlab("Survived: No = 0, Yes = 1") +
+  ggtitle("Gender Vs. Survival (train_data)")
+```
+
+## Random Forest Model
+```{r}
+library(randomForest)
+train_data$Survived <- as.factor(train_data$Survived)
+rf <- randomForest(
+  Survived ~ .,
+  data = train_data
+)
+
+rf #this is based on the removed missing values
+```
+
+##Converting the rest of the variables into factors
+```{r}
+test_data$Sex <- as.factor(test_data$Sex)
+test_data$Embarked <- as.factor(test_data$Embarked)
+test_data$Parch <- as.factor(test_data$Parch)
+test_data$Fare <- as.factor(test_data$Fare)
+
+train_data$Sex <- as.factor(train_data$Sex)
+train_data$Embarked <- as.factor(train_data$Embarked)
+test_data$Parch <- as.factor(test_data$Parch)
+test_data$Fare <- as.factor(test_data$Fare)
+sapply(train_data, class)
+```
+
+```{r}
+importance(rf)
+create_rfplot <- function(rf, type){
+  imp <- importance(rf, type = type, scale = F)
+  featureImportance <- data.frame(Feature = row.names(imp), Importance = imp[, 1])
+  p <- ggplot(featureImportance, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "#53cfff", width = 0.65) +
+  coord_flip() +
+  theme_light(base_size = 20) +
+  theme(axis.title.x = element_text(size = 15, color = "black"),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 15, color = "black"),
+        axis.text.y = element_text(size = 15, color = "black"))
+  return(p)
+} # I saw a similar function in a website and I thought it would work well with the titanic data, so I just adjusted it to my variables
+create_rfplot(rf, type = 2)
+```
+# Logistic Regression 
+```{r}
+test_data <- read_csv("https://raw.githubusercontent.com/nataliesouza/website/master/test.csv")
+train_data <- read_csv("https://raw.githubusercontent.com/nataliesouza/website/master/train.csv")
+test_data$Survived <- NA
+complete_data <- rbind(train_data, test_data)
+str(complete_data)
+```
+
+## Analyzing Complete Data df
+```{r}
+colSums(is.na(complete_data))
+complete_data$Embarked[complete_data$Embarked==""] <- "S"
+complete_data$Age[is.na(complete_data$Age)] <- median(complete_data$Age,na.rm=T)
+```
+
+## Cleaning up Complete Data df
+```{r}
+titanic_data <- complete_data %>% select(-c(Cabin, PassengerId, Ticket, Name))
+titanic_data$Survived <- as.factor(titanic_data$Survived)
+titanic_data$Sex <- as.factor(titanic_data$Sex)
+titanic_data$Pclass <- as.factor(titanic_data$Pclass)
+titanic_data$Embarked <- as.factor(titanic_data$Embarked)
+```
+
+## Setting Seed 
+```{r}
+set.seed(222)
+t = sample(1:nrow(titanic_data), 0.7*nrow(titanic_data))
+train = titanic_data[t,]
+test = titanic_data[-t,]
+```
+## Creating model
+```{r}
+library(car)
+library(car)
+model <- lm(Survived~., data=train)
+t = vif(model)
+sort(t, decreasing=TRUE)
+model1<- glm(as.factor(Survived)~., family="binomial", data=train)
+summary(model1)
+```
+## Discarding Parch and Embarked Variables
+```{r}
+stepmodel = step(model1, direction = "both")
+formula(stepmodel)
+summary(stepmodel)
+```
+
+## Predicting Score of "train"
+```{r}
+train$score <- predict(stepmodel, newdata = train, type="response")
+head(train$score)
+```
+```{r}
+tail(train$score)
+```
+
+## Final Model and Predictions
+```{r}
+train$prediction <- ifelse(train$score>=0.6, 1, 0)
+table(factor(train$prediction), factor(train$Survived))
+```
+### The model indicates an accuracy of 80.06% -> 502/627 = 0.8006 in regards to the train data-set
+
+```{r}
+test$score<-predict(stepmodel, test, type = "response")
+head(test$score)
+```
+```{r}
+test$predicted<-ifelse(test$score>=0.6, 1, 0)
+head(test$predicted)
+```
+```{r}
+table(factor(test$predicted), factor(test$Survived))
+```
+
+### The model indicates an accuracy of 81.68% -> 214/262 = 0.8168 in regards to the test data-set 
+
+### Comments: I tried using the cheat sheet for Python datadrame to R dataframe, from what I was able to find online for this titanic data-set from kaggle's tutorials. 
+
+
