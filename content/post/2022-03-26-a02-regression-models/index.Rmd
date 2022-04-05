@@ -9,314 +9,197 @@ tags: []
 # Call libraries
 ```{r}
 pacman::p_load(pacman, magrittr, productplots, psych, RColorBrewer, tidyverse)
+library(tidyr)
 ```
 
-# Import data from excel file
+# Import data from gitHub
 ```{r}
 library(readxl)
 data <- read_excel("~/Documents/DataScience/website/resources/_gen/assets/Professor_Proposes_Data.xlsx")
 summary(data)
+sum(is.na(data))
 ```
-# Checking variables
+
+# Univariate Analysis 
 ```{r}
-names(data)
+## Summary Statistics (Price)
+summary(data$Price)
 ```
-# Checking if dependent variable follows a normal distribution 
+
 ```{r}
+## Histogram and Density Plot (Price)
 hist(data$Price)
+plot(density(data$Price))
 ```
-
-# Save dataset to tibble named "df"
 ```{r}
-df <- data %>%
-  as_tibble() %>%
-  print()
+## Summary Statistics (Carat)
+summary(data$Carat)
 ```
-# Cleaning up dataframe
+
 ```{r}
-df %<>%
-  select(Carat:Price) %>%
-  print()
+## Histogram and Density Plot (Carat)
+hist(data$Carat)
+plot(density(data$Carat))
 ```
-# Bar chart of Price
 ```{r}
-library(ggthemes)
-df %>%
-  ggplot() +
-  geom_bar(aes(Price, fill = Price)) +
-  theme(
-    axis.title.x = element_blank(),
-    legend.position = "none"
-  ) +
-  theme_clean() +
-  ggtitle("Bar chart of price")
-# Frequencies for Carat
-df %>% count(Price)
-
+## Counting number of records (Clarity)
+table(data$Clarity)
 ```
-# Bar chart of Carat
+
 ```{r}
-summary(log10(data$Carat))
-df %>%
-  ggplot() +
-  geom_bar(aes(Carat, fill = Carat)) +
-  theme(
-    axis.title.x = element_blank(),
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of carat")
-       
-# Create dichotomous 0.9 carat/not variable for exploration
-df %<>%
-  mutate(
-    carat = ifelse(
-      Carat %in%
-      c("0.9"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies for Carat
-df %>% count(carat)
-
-#Stacked bar chart 
-df %>%
-  ggplot(aes(carat, fill = Price)) + 
-  geom_bar(position = "fill")
-
+## Frequencies (Clarity)
+library(summarytools)
+summarytools::freq(data$Clarity, order = "freq")
 ```
 
 
-# Bar chart of Color
 ```{r}
-df %>%
-  ggplot() +
-  geom_bar(aes(Colour, fill = Colour)) +
-  theme(
-    axis.title.x = element_blank(),
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of color")
-
-# Create dichotomous J/not variable for exploration
-df %<>%
-  mutate(
-    color = ifelse(
-      Colour %in%
-      c("J"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies for Color
-df %>% count(color)
-
-#Stacked bar chart 
-df %>%
-  ggplot(aes(color, fill = Price)) + 
-  geom_bar(position = "fill")
+## Counting number of records (Color)
+table(data$Colour)
 ```
-# Bar chart of Clarity 
+
+
 ```{r}
-df %>%
-  ggplot() +
-  geom_bar(aes(Clarity, fill = Clarity)) +
-  theme(
-    axis.title.x = element_blank(),
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of clarity")
-
-# Create dichotomous SI2/not variable for exploration
-df %<>%
-  mutate(
-    clarity = ifelse(
-      Clarity %in%
-      c("SI2"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies for Clarity
-df %>% count(clarity)
-
-# 100% stacked bar chart
-df %>%
-  ggplot(aes(clarity, fill = Price)) + 
-  geom_bar(position = "fill")
+## Frequencies (Color)
+library(summarytools)
+summarytools::freq(data$Colour, order = "freq")
 ```
-# Bar chart of Cut
 ```{r}
-df %>%
-  ggplot() + 
-  geom_bar(aes(Cut, fill = Cut)) + 
-  theme(
-    axis.title.x = element_blank(), 
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of cut")
-
-# Create dichotomous V/not variable for exploration
-df %<>%
-  mutate(
-    cut = ifelse(
-      Cut %in%
-      c("V"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies of cut
-df %>% count(cut)
-
-# 100% stacked bar chart
-df %>%
-  ggplot(aes(cut, fill = Price)) + 
-  geom_bar(position = "fill")
+## Counting number of records (Cut)
+table(data$Cut)
 ```
-# Bar chart of Certification 
+
 ```{r}
-df %>%
-  ggplot() + 
-  geom_bar(aes(Certification, fill = Certification)) + 
-  theme(
-    axis.title.x = element_blank(), 
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of certification")
-
-# Create dichotomous GIA/not variable for exploration
-df %<>%
-  mutate(
-    certification = ifelse(
-      Certification %in%
-      c("GIA"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies of certification
-df %>% count(certification)
-
-# 100% stacked bar chart
-df %>%
-  ggplot(aes(certification, fill = Price)) + 
-  geom_bar(position = "fill")
+## Frequencies (Cut)
+library(summarytools)
+summarytools::freq(data$Cut, order = "freq")
 ```
-# Bar chart of Polish
+
 ```{r}
-df %>%
-  ggplot() + 
-  geom_bar(aes(Polish, fill = Polish)) + 
-  theme(
-    axis.title.x = element_blank(), 
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of polish")
-
-# Create dichotomous G/not variable for exploration
-df %<>%
-  mutate(
-    polish = ifelse(
-      Polish %in%
-      c("G"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies of polish
-df %>% count(polish)
-
-# 100% stacked bar chart
-df %>%
-  ggplot(aes(polish, fill = Price)) + 
-  geom_bar(position = "fill")
+## Counting number of records (Certification)
+table(data$Certification)
 ```
-# Bar chart of Symmetry
+
 ```{r}
-df %>%
-  ggplot() + 
-  geom_bar(aes(Symmetry, fill = Symmetry)) + 
-  theme(
-    axis.title.x = element_blank(), 
-    legend.position = "none"
-  )  +
-  theme_clean() +
-  ggtitle("Bar chart of symmetry")
-
-# Create dichotomous V/not variable for exploration
-df %<>%
-  mutate(
-    symmetry = ifelse(
-      Symmetry %in%
-      c("V"),
-      "yes", "no")
-  ) %>%
-  print()
-
-# Frequencies of symmetry
-df %>% count(symmetry)
-
-# 100% stacked bar chart
-df %>%
-  ggplot(aes(symmetry, fill = Price)) + 
-  geom_bar(position = "fill")
+## Frequencies (Certification)
+library(summarytools)
+summarytools::freq(data$Certification, order = "freq")
 ```
-
-# Plot of data
 ```{r}
-plot(data)
-# Carat and Certification seem to have a correlation 
-```
-# Multiple Regression
-```{r}
-multiple.regression <- lm(Price ~ Carat + Certification, data = data) 
-summary(multiple.regression)
+## Counting number of records (Polish)
+table(data$Polish)
 ```
 
-# Bootstrap resampling and tidy regression models
+```{r}
+## Frequencies (Polish)
+library(summarytools)
+summarytools::freq(data$Polish, order = "freq")
+```
+
+```{r}
+## Counting number of records (Symmetry)
+table(data$Symmetry)
+```
+
+```{r}
+## Frequencies (Symmetry)
+library(summarytools)
+summarytools::freq(data$Symmetry, order = "freq")
+```
+
+# Bivariate Analysis of Metric Data
+```{r}
+library(tidyverse)
+ggplot(data, aes(Carat, Price)) + 
+    geom_point()
+```
+# Focus on High Carat High Price Data Set
+```{r}
+ggplot(data, aes(Carat, Price)) + 
+    geom_point() +
+    coord_cartesian(xlim = c(0.7, 1.7), ylim = c(1800, 3250))
+```
+# Focus on Low Carat Price Low Price Data Set
+```{r}
+ggplot(data, aes(Carat, Price)) + 
+    geom_point() +
+    coord_cartesian(xlim = c(0.0, 0.4), ylim = c(0.0, 1000))
+```
+
+# Regression Analysis with Carat
+```{r}
+library(ggplot2)
+carat.lm <- lm(Price ~ Carat, data = data)
+summary(carat.lm)
+```
+## Comments: for some reason my results were not equivalent to the ones present in the Solution document.
+
+# Regression analysis with Clarity
+```{r}
+clarity.lm <- lm(Price ~ Clarity, data = data)
+summary(clarity.lm)
+```
+## Comments: results are closer to the ones present in Solution documents.
+
+# Bivariate Analysis of Non-metric data
+```{r}
+color.lm <- lm(Price ~ Colour, data = data)
+summary(color.lm)
+```
+
+```{r}
+cut.lm <- lm(Price ~ Cut, data = data)
+summary(cut.lm)
+```
+
+```{r}
+certification.lm <- lm(Price ~ Certification, data = data)
+summary(certification.lm)
+```
+
+```{r}
+polish.lm <- lm(Price ~ Polish, data = data)
+summary(polish.lm)
+```
+
+```{r}
+symmetry.lm <- lm(Price ~ Symmetry, data = data)
+summary(symmetry.lm)
+```
+
+# Multiple Regression 
+```{r}
+price.lm <- lm(Price ~ Cut + Colour + Clarity + Certification + Polish + Carat, data = data)
+summary(price.lm)
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(price.lm)
+par(mfrow = c(1,1))
+```
+
+# Bootstrap resampling 
 ```{r}
 library(tidyverse)
 library(broom)
-ggplot(data, aes(Carat, Price)) + 
-    geom_point()
-
-nlsfit <- nls(Carat ~ k / Price + b, data, start = list(k = 1, b = 0))
-summary(nlsfit)
-
-ggplot(data, aes(Price, Carat)) +
+```
+## Low Price Data Set
+```{r}
+nlsfit <- nls(Price ~ k / Carat + b, data, start = list(k = 1, b = 0))
+ggplot(data, aes(Carat, Price)) +
     geom_point() +
+    coord_cartesian(xlim = c(0.7, 1.7), ylim = c(1800, 3250)) +
     geom_line(aes(y = predict(nlsfit)))
 ```
-# Bootstrapping models 
+
+## High Price Data Set
 ```{r}
-library(rsample)
-set.seed(1)
-boots <- bootstraps(data, times = 2000, apparent = TRUE)
-boots
-
-fit_nls_on_bootstrap <- function(split) {
-    nls(Carat ~ k / Price + b, analysis(split), start = list(k = 1, b = 0))
-}
-boot_models <-
-  boots %>% 
-  mutate(model = map(splits, fit_nls_on_bootstrap),
-         coef_info = map(model, tidy))
-
-boot_coefs <- 
-  boot_models %>% 
-  unnest(coef_info)
+ggplot(data, aes(Carat, Price)) + 
+    geom_point() +
+    coord_cartesian(xlim = c(0.7, 1.7), ylim = c(1800, 3250)) +
+    geom_line(aes(y = predict(nlsfit)))
 ```
 
-# Cofidence intervals 
-```{r}
-percentile_intervals <- int_pctl(boot_models, coef_info)
-percentile_intervals
-```
+
 
